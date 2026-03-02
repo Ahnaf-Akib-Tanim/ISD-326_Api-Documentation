@@ -73,19 +73,6 @@ window.onload = function () {
                           method: "credit_card",
                           createdAt: "2026-03-01T10:30:00Z"
                         }
-                      },
-                      pending: {
-                        summary: "Payment pending (awaiting 3DS)",
-                        value: {
-                          paymentId: "pay_abc124",
-                          bookingId: "booking102",
-                          customerId: "cust002",
-                          amount: 180.00,
-                          currency: "USD",
-                          status: "pending",
-                          method: "paypal",
-                          createdAt: "2026-03-01T11:00:00Z"
-                        }
                       }
                     }
                   }
@@ -121,19 +108,6 @@ window.onload = function () {
                           method: "credit_card",
                           createdAt: "2026-03-01T10:30:00Z"
                         }
-                      },
-                      failed: {
-                        summary: "GET /payments/pay_abc125 — failed payment",
-                        value: {
-                          paymentId: "pay_abc125",
-                          bookingId: "booking103",
-                          customerId: "cust003",
-                          amount: 220.00,
-                          currency: "USD",
-                          status: "failed",
-                          method: "credit_card",
-                          createdAt: "2026-03-02T09:15:00Z"
-                        }
                       }
                     }
                   }
@@ -142,50 +116,10 @@ window.onload = function () {
             }
           }
         },
-
-        "/customers/{customerId}/payments": {
-          get: {
-            tags: ["Customer Payments"],
-            summary: "List all payments made by a customer",
-            parameters: [
-              { name: "customerId", in: "path", required: true, schema: { type: "string" }, example: "cust001" },
-              { name: "status", in: "query", required: false, schema: { type: "string", enum: ["completed", "pending", "failed", "refunded"] }, example: "completed" },
-              { name: "start", in: "query", required: false, schema: { type: "string", format: "date" }, example: "2026-03-01" },
-              { name: "end", in: "query", required: false, schema: { type: "string", format: "date" }, example: "2026-03-31" }
-            ],
-            responses: {
-              "200": {
-                description: "List of customer payments",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/PaymentListResponse" },
-                    examples: {
-                      marchPayments: {
-                        summary: "GET /customers/cust001/payments?start=2026-03-01&end=2026-03-31",
-                        value: {
-                          customerId: "cust001",
-                          payments: [
-                            { paymentId: "pay_abc123", bookingId: "booking101", amount: 350.00, currency: "USD", status: "completed", method: "credit_card", createdAt: "2026-03-01T10:30:00Z" },
-                            { paymentId: "pay_abc126", bookingId: "booking104", amount: 410.00, currency: "USD", status: "completed", method: "credit_card", createdAt: "2026-03-15T14:00:00Z" }
-                          ],
-                          total: 760.00
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        // ─────────────────────────────────────────
-        // REFUNDS
-        // ─────────────────────────────────────────
 
         "/payments/{paymentId}/refund": {
           post: {
-            tags: ["Refunds"],
+            tags: ["Customer Payments"],
             summary: "Request a refund for a payment",
             parameters: [
               { name: "paymentId", in: "path", required: true, schema: { type: "string" }, example: "pay_abc123" }
@@ -198,17 +132,11 @@ window.onload = function () {
                   examples: {
                     fullRefund: {
                       summary: "POST /payments/pay_abc123/refund — full refund",
-                      value: {
-                        reason: "Guest cancelled within free cancellation window",
-                        amount: 350.00
-                      }
+                      value: { reason: "Guest cancelled within free cancellation window", amount: 350.00 }
                     },
                     partialRefund: {
                       summary: "POST /payments/pay_abc123/refund — partial refund",
-                      value: {
-                        reason: "Partial refund due to late cancellation policy",
-                        amount: 175.00
-                      }
+                      value: { reason: "Partial refund due to late cancellation policy", amount: 175.00 }
                     }
                   }
                 }
@@ -223,52 +151,6 @@ window.onload = function () {
                     examples: {
                       fullRefund: {
                         summary: "Full refund issued",
-                        value: {
-                          refundId: "ref_xyz001",
-                          paymentId: "pay_abc123",
-                          amount: 350.00,
-                          currency: "USD",
-                          status: "refunded",
-                          reason: "Guest cancelled within free cancellation window",
-                          processedAt: "2026-03-05T08:00:00Z"
-                        }
-                      },
-                      partialRefund: {
-                        summary: "Partial refund issued",
-                        value: {
-                          refundId: "ref_xyz002",
-                          paymentId: "pay_abc123",
-                          amount: 175.00,
-                          currency: "USD",
-                          status: "refunded",
-                          reason: "Partial refund due to late cancellation policy",
-                          processedAt: "2026-03-05T08:30:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        "/refunds/{refundId}": {
-          get: {
-            tags: ["Refunds"],
-            summary: "Get refund status by refund ID",
-            parameters: [
-              { name: "refundId", in: "path", required: true, schema: { type: "string" }, example: "ref_xyz001" }
-            ],
-            responses: {
-              "200": {
-                description: "Refund details",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/RefundResponse" },
-                    examples: {
-                      refundStatus: {
-                        summary: "GET /refunds/ref_xyz001",
                         value: {
                           refundId: "ref_xyz001",
                           paymentId: "pay_abc123",
@@ -318,16 +200,6 @@ window.onload = function () {
                           ],
                           totalPaid: 684.00
                         }
-                      },
-                      pendingPayout: {
-                        summary: "GET /hosts/host123/payouts?status=pending",
-                        value: {
-                          hostId: "host123",
-                          payouts: [
-                            { payoutId: "pout_003", amount: 270.00, currency: "USD", status: "pending", method: "bank_transfer", scheduledDate: "2026-03-19", paidAt: null }
-                          ],
-                          totalPaid: 0
-                        }
                       }
                     }
                   }
@@ -349,13 +221,7 @@ window.onload = function () {
                   examples: {
                     earlyPayout: {
                       summary: "POST /hosts/host123/payouts — request early payout",
-                      value: {
-                        hostId: "host123",
-                        amount: 270.00,
-                        currency: "USD",
-                        method: "bank_transfer",
-                        bankAccountId: "bank_acc_456"
-                      }
+                      value: { hostId: "host123", amount: 270.00, currency: "USD", method: "bank_transfer", bankAccountId: "bank_acc_456" }
                     }
                   }
                 }
@@ -386,128 +252,6 @@ window.onload = function () {
                 }
               }
             }
-          }
-        },
-
-        "/hosts/{hostId}/payouts/{payoutId}": {
-          get: {
-            tags: ["Host Payouts"],
-            summary: "Get a specific payout by ID",
-            parameters: [
-              { name: "hostId", in: "path", required: true, schema: { type: "string" }, example: "host123" },
-              { name: "payoutId", in: "path", required: true, schema: { type: "string" }, example: "pout_001" }
-            ],
-            responses: {
-              "200": {
-                description: "Payout details",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/PayoutResponse" },
-                    examples: {
-                      paidPayout: {
-                        summary: "GET /hosts/host123/payouts/pout_001 — paid",
-                        value: {
-                          payoutId: "pout_001",
-                          hostId: "host123",
-                          amount: 315.00,
-                          currency: "USD",
-                          status: "paid",
-                          method: "bank_transfer",
-                          scheduledDate: "2026-03-05",
-                          paidAt: "2026-03-05T09:00:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        // ─────────────────────────────────────────
-        // HOST PAYOUT METHODS
-        // ─────────────────────────────────────────
-
-        "/hosts/{hostId}/payout-methods": {
-          get: {
-            tags: ["Host Payout Methods"],
-            summary: "List saved payout methods for a host",
-            parameters: [
-              { name: "hostId", in: "path", required: true, schema: { type: "string" }, example: "host123" }
-            ],
-            responses: {
-              "200": {
-                description: "Payout methods",
-                content: {
-                  "application/json": {
-                    schema: { type: "array", items: { $ref: "#/components/schemas/PayoutMethod" } },
-                    examples: {
-                      methods: {
-                        summary: "GET /hosts/host123/payout-methods",
-                        value: [
-                          { id: "bank_acc_456", type: "bank_transfer", accountHolderName: "John Host", bankName: "Chase", last4: "7890", currency: "USD", isDefault: true },
-                          { id: "pp_789", type: "paypal", email: "host@example.com", currency: "USD", isDefault: false }
-                        ]
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          post: {
-            tags: ["Host Payout Methods"],
-            summary: "Add a new payout method",
-            parameters: [
-              { name: "hostId", in: "path", required: true, schema: { type: "string" }, example: "host123" }
-            ],
-            requestBody: {
-              required: true,
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/PayoutMethodCreate" },
-                  examples: {
-                    addBank: {
-                      summary: "POST /hosts/host123/payout-methods — add bank account",
-                      value: { type: "bank_transfer", accountHolderName: "John Host", routingNumber: "021000021", accountNumber: "123456789", currency: "USD", isDefault: true }
-                    },
-                    addPaypal: {
-                      summary: "POST /hosts/host123/payout-methods — add PayPal",
-                      value: { type: "paypal", email: "host@example.com", currency: "USD", isDefault: false }
-                    }
-                  }
-                }
-              }
-            },
-            responses: {
-              "201": {
-                description: "Payout method added",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/PayoutMethod" },
-                    examples: {
-                      added: {
-                        summary: "Bank account added",
-                        value: { id: "bank_acc_999", type: "bank_transfer", accountHolderName: "John Host", bankName: "Chase", last4: "6789", currency: "USD", isDefault: true }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        "/hosts/{hostId}/payout-methods/{methodId}": {
-          delete: {
-            tags: ["Host Payout Methods"],
-            summary: "Remove a payout method",
-            parameters: [
-              { name: "hostId", in: "path", required: true, schema: { type: "string" }, example: "host123" },
-              { name: "methodId", in: "path", required: true, schema: { type: "string" }, example: "bank_acc_456" }
-            ],
-            responses: { "204": { description: "Payout method removed" } }
           }
         },
 
@@ -542,19 +286,6 @@ window.onload = function () {
                           currency: "USD",
                           bookingsCount: 3,
                           averagePerBooking: 228.00
-                        }
-                      },
-                      yearlyEarnings: {
-                        summary: "GET /hosts/host123/earnings?year=2026",
-                        value: {
-                          hostId: "host123",
-                          period: { year: 2026 },
-                          grossEarnings: 4800.00,
-                          platformFee: 480.00,
-                          netEarnings: 4320.00,
-                          currency: "USD",
-                          bookingsCount: 18,
-                          averagePerBooking: 240.00
                         }
                       }
                     }
@@ -671,15 +402,6 @@ window.onload = function () {
             }
           },
 
-          PaymentListResponse: {
-            type: "object",
-            properties: {
-              customerId: { type: "string", example: "cust001" },
-              payments: { type: "array", items: { $ref: "#/components/schemas/PaymentResponse" } },
-              total: { type: "number", format: "float", example: 760.00 }
-            }
-          },
-
           RefundRequest: {
             type: "object",
             properties: {
@@ -732,33 +454,6 @@ window.onload = function () {
               hostId: { type: "string", example: "host123" },
               payouts: { type: "array", items: { $ref: "#/components/schemas/PayoutResponse" } },
               totalPaid: { type: "number", format: "float", example: 684.00 }
-            }
-          },
-
-          PayoutMethod: {
-            type: "object",
-            properties: {
-              id: { type: "string", example: "bank_acc_456" },
-              type: { type: "string", enum: ["bank_transfer", "paypal", "stripe"], example: "bank_transfer" },
-              accountHolderName: { type: "string", example: "John Host" },
-              bankName: { type: "string", example: "Chase" },
-              last4: { type: "string", example: "7890" },
-              email: { type: "string", example: "host@example.com" },
-              currency: { type: "string", example: "USD" },
-              isDefault: { type: "boolean", example: true }
-            }
-          },
-
-          PayoutMethodCreate: {
-            type: "object",
-            properties: {
-              type: { type: "string", enum: ["bank_transfer", "paypal", "stripe"], example: "bank_transfer" },
-              accountHolderName: { type: "string", example: "John Host" },
-              routingNumber: { type: "string", example: "021000021" },
-              accountNumber: { type: "string", example: "123456789" },
-              email: { type: "string", example: "host@example.com" },
-              currency: { type: "string", example: "USD" },
-              isDefault: { type: "boolean", example: true }
             }
           },
 
