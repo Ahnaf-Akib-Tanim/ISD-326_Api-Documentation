@@ -15,7 +15,7 @@ window.onload = function () {
       paths: {
 
         // ─────────────────────────────────────────
-        // BOOKING CREATION & CORE
+        // 1. BOOKING CREATION & CORE
         // ─────────────────────────────────────────
 
         "/bookings": {
@@ -113,6 +113,10 @@ window.onload = function () {
           }
         },
 
+        // ─────────────────────────────────────────
+        // 2. GET BOOKING DETAILS
+        // ─────────────────────────────────────────
+
         "/bookings/{bookingId}": {
           get: {
             tags: ["Booking Core"],
@@ -188,7 +192,7 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // BOOKING STATUS TRACKING
+        // 3 & 4. BOOKING STATUS TRACKING
         // ─────────────────────────────────────────
 
         "/bookings/{bookingId}/status": {
@@ -255,7 +259,7 @@ window.onload = function () {
               }
             }
           },
-          patch: {
+          put: {
             tags: ["Status Tracking"],
             summary: "Update the status of a booking",
             description: "Manually advance a booking status. Used by hosts (approve/decline), guests (cancel), and the system (check-in/check-out triggers).",
@@ -269,23 +273,23 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/BookingStatusUpdateRequest" },
                   examples: {
                     hostApproves: {
-                      summary: "PATCH /bookings/booking_101/status — host approves",
+                      summary: "PUT /bookings/booking_101/status — host approves",
                       value: { status: "confirmed", note: "Welcome! Looking forward to hosting you." }
                     },
                     hostDeclines: {
-                      summary: "PATCH /bookings/booking_101/status — host declines",
+                      summary: "PUT /bookings/booking_101/status — host declines",
                       value: { status: "declined", note: "Property unavailable due to unexpected maintenance." }
                     },
                     guestCancels: {
-                      summary: "PATCH /bookings/booking_101/status — guest cancels",
+                      summary: "PUT /bookings/booking_101/status — guest cancels",
                       value: { status: "cancelled_by_guest", note: "Travel plans changed." }
                     },
                     checkIn: {
-                      summary: "PATCH /bookings/booking_101/status — guest checks in",
+                      summary: "PUT /bookings/booking_101/status — guest checks in",
                       value: { status: "checked_in", note: "Guest checked in via smart lock code" }
                     },
                     checkOut: {
-                      summary: "PATCH /bookings/booking_101/status — guest checks out",
+                      summary: "PUT /bookings/booking_101/status — guest checks out",
                       value: { status: "checked_out", note: "Guest checked out on time" }
                     }
                   }
@@ -335,13 +339,14 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // GUEST BOOKING HISTORY
+        // 5. GUEST BOOKING HISTORY
         // ─────────────────────────────────────────
 
         "/guests/{guestId}/bookings": {
           get: {
             tags: ["Guest Booking History"],
             summary: "List all bookings made by a guest",
+            description: "Returns full guest booking history with optional filters for status, date range, and pagination. Use status=confirmed for upcoming trips and status=completed for past stays.",
             parameters: [
               { name: "guestId", in: "path", required: true, schema: { type: "string" }, example: "cust001" },
               {
@@ -376,7 +381,7 @@ window.onload = function () {
                         }
                       },
                       upcomingOnly: {
-                        summary: "GET /guests/cust001/bookings?status=confirmed",
+                        summary: "GET /guests/cust001/bookings?status=confirmed — upcoming trips",
                         value: {
                           guestId: "cust001",
                           bookings: [
@@ -395,82 +400,8 @@ window.onload = function () {
           }
         },
 
-        "/guests/{guestId}/bookings/upcoming": {
-          get: {
-            tags: ["Guest Booking History"],
-            summary: "Get upcoming bookings for a guest",
-            description: "Returns only confirmed or checked_in bookings with a future check-in or active stay — used for the guest's trip dashboard.",
-            parameters: [
-              { name: "guestId", in: "path", required: true, schema: { type: "string" }, example: "cust001" }
-            ],
-            responses: {
-              "200": {
-                description: "Upcoming trips",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/BookingListResponse" },
-                    examples: {
-                      upcoming: {
-                        summary: "GET /guests/cust001/bookings/upcoming",
-                        value: {
-                          guestId: "cust001",
-                          bookings: [
-                            { bookingId: "booking_101", listingId: "listing_nyc_001", checkIn: "2026-04-10", checkOut: "2026-04-14", nights: 4, totalPrice: 520.00, currency: "USD", status: "confirmed" },
-                            { bookingId: "booking_105", listingId: "listing_boston_002", checkIn: "2026-06-20", checkOut: "2026-06-23", nights: 3, totalPrice: 360.00, currency: "USD", status: "confirmed" }
-                          ],
-                          totalCount: 2,
-                          page: 1,
-                          limit: 10
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        "/guests/{guestId}/bookings/past": {
-          get: {
-            tags: ["Guest Booking History"],
-            summary: "Get past (completed) bookings for a guest",
-            description: "Returns all completed stays — used for the guest's travel history and to prompt reviews.",
-            parameters: [
-              { name: "guestId", in: "path", required: true, schema: { type: "string" }, example: "cust001" },
-              { name: "page", in: "query", required: false, schema: { type: "integer", default: 1 }, example: 1 },
-              { name: "limit", in: "query", required: false, schema: { type: "integer", default: 10 }, example: 10 }
-            ],
-            responses: {
-              "200": {
-                description: "Past trips",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/BookingListResponse" },
-                    examples: {
-                      pastTrips: {
-                        summary: "GET /guests/cust001/bookings/past",
-                        value: {
-                          guestId: "cust001",
-                          bookings: [
-                            { bookingId: "booking_090", listingId: "listing_miami_003", checkIn: "2026-02-14", checkOut: "2026-02-17", nights: 3, totalPrice: 390.00, currency: "USD", status: "completed" },
-                            { bookingId: "booking_075", listingId: "listing_chicago_011", checkIn: "2025-12-20", checkOut: "2025-12-25", nights: 5, totalPrice: 610.00, currency: "USD", status: "completed" }
-                          ],
-                          totalCount: 2,
-                          page: 1,
-                          limit: 10
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
         // ─────────────────────────────────────────
-        // HOST BOOKING HISTORY
+        // 6. HOST BOOKING HISTORY
         // ─────────────────────────────────────────
 
         "/hosts/{hostId}/bookings": {
@@ -532,138 +463,11 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // CHECK-IN / CHECK-OUT
-        // ─────────────────────────────────────────
-
-        "/bookings/{bookingId}/check-in": {
-          post: {
-            tags: ["Check-in & Check-out"],
-            summary: "Record guest check-in",
-            description: "Marks the guest as checked in. Can be triggered by the host, guest self-check-in, or smart lock system. Transitions booking from 'confirmed' to 'checked_in'.",
-            parameters: [
-              { name: "bookingId", in: "path", required: true, schema: { type: "string" }, example: "booking_101" }
-            ],
-            requestBody: {
-              required: true,
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/CheckInRequest" },
-                  examples: {
-                    selfCheckIn: {
-                      summary: "POST /bookings/booking_101/check-in — guest self check-in",
-                      value: { method: "self_checkin", note: "Guest used the lockbox code", checkedInAt: "2026-04-10T15:30:00Z" }
-                    },
-                    hostCheckIn: {
-                      summary: "POST /bookings/booking_101/check-in — host greets guest",
-                      value: { method: "host_greeting", note: "Host met guest at the door", checkedInAt: "2026-04-10T14:00:00Z" }
-                    },
-                    smartLock: {
-                      summary: "POST /bookings/booking_101/check-in — smart lock auto check-in",
-                      value: { method: "smart_lock", note: "Smart lock access granted at door", checkedInAt: "2026-04-10T16:00:00Z" }
-                    }
-                  }
-                }
-              }
-            },
-            responses: {
-              "200": {
-                description: "Check-in recorded",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/CheckInOutResponse" },
-                    examples: {
-                      checkedIn: {
-                        summary: "Guest successfully checked in",
-                        value: {
-                          bookingId: "booking_101",
-                          status: "checked_in",
-                          method: "self_checkin",
-                          note: "Guest used the lockbox code",
-                          timestamp: "2026-04-10T15:30:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "409": {
-                description: "Check-in conflict",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      alreadyCheckedIn: {
-                        summary: "Guest already checked in",
-                        value: { code: "ALREADY_CHECKED_IN", message: "Booking booking_101 is already in checked_in status." }
-                      },
-                      tooEarly: {
-                        summary: "Check-in before allowed window",
-                        value: { code: "CHECKIN_TOO_EARLY", message: "Check-in is not allowed before 2026-04-10T14:00:00Z." }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        "/bookings/{bookingId}/check-out": {
-          post: {
-            tags: ["Check-in & Check-out"],
-            summary: "Record guest check-out",
-            description: "Marks the guest as checked out. Transitions booking from 'checked_in' to 'checked_out', then the system auto-completes and schedules host payout.",
-            parameters: [
-              { name: "bookingId", in: "path", required: true, schema: { type: "string" }, example: "booking_101" }
-            ],
-            requestBody: {
-              required: true,
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/CheckOutRequest" },
-                  examples: {
-                    onTime: {
-                      summary: "POST /bookings/booking_101/check-out — on time",
-                      value: { note: "Guest left on time, property in good condition", checkedOutAt: "2026-04-14T11:00:00Z" }
-                    },
-                    lateCheckOut: {
-                      summary: "POST /bookings/booking_101/check-out — late checkout approved",
-                      value: { note: "Host approved late checkout until 1PM", checkedOutAt: "2026-04-14T13:00:00Z" }
-                    }
-                  }
-                }
-              }
-            },
-            responses: {
-              "200": {
-                description: "Check-out recorded",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/CheckInOutResponse" },
-                    examples: {
-                      checkedOut: {
-                        summary: "Guest successfully checked out",
-                        value: {
-                          bookingId: "booking_101",
-                          status: "checked_out",
-                          note: "Guest left on time, property in good condition",
-                          timestamp: "2026-04-14T11:00:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        // ─────────────────────────────────────────
-        // BOOKING MODIFICATIONS
+        // 7. BOOKING MODIFICATIONS
         // ─────────────────────────────────────────
 
         "/bookings/{bookingId}/modify": {
-          patch: {
+          put: {
             tags: ["Booking Modifications"],
             summary: "Request a modification to an existing booking",
             description: "Either guest or host can request a change to dates, guest count, or price. The other party must accept before the modification takes effect.",
@@ -677,7 +481,7 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/BookingModifyRequest" },
                   examples: {
                     extendDates: {
-                      summary: "PATCH /bookings/booking_101/modify — extend stay by 1 night",
+                      summary: "PUT /bookings/booking_101/modify — extend stay by 1 night",
                       value: {
                         requestedBy: "guest",
                         checkIn: "2026-04-10",
@@ -687,7 +491,7 @@ window.onload = function () {
                       }
                     },
                     reduceDates: {
-                      summary: "PATCH /bookings/booking_101/modify — shorten stay",
+                      summary: "PUT /bookings/booking_101/modify — shorten stay",
                       value: {
                         requestedBy: "guest",
                         checkIn: "2026-04-11",
@@ -697,7 +501,7 @@ window.onload = function () {
                       }
                     },
                     updateGuests: {
-                      summary: "PATCH /bookings/booking_101/modify — update guest count",
+                      summary: "PUT /bookings/booking_101/modify — update guest count",
                       value: {
                         requestedBy: "guest",
                         guests: { adults: 3, children: 1, infants: 0 },
@@ -736,99 +540,8 @@ window.onload = function () {
           }
         },
 
-        "/bookings/{bookingId}/modify/{modificationId}/accept": {
-          post: {
-            tags: ["Booking Modifications"],
-            summary: "Accept a modification request",
-            parameters: [
-              { name: "bookingId", in: "path", required: true, schema: { type: "string" }, example: "booking_101" },
-              { name: "modificationId", in: "path", required: true, schema: { type: "string" }, example: "mod_001" }
-            ],
-            responses: {
-              "200": {
-                description: "Modification accepted and applied",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/Booking" },
-                    examples: {
-                      accepted: {
-                        summary: "POST /bookings/booking_101/modify/mod_001/accept — host accepts extension",
-                        value: {
-                          bookingId: "booking_101",
-                          listingId: "listing_nyc_001",
-                          guestId: "cust001",
-                          hostId: "host123",
-                          checkIn: "2026-04-10",
-                          checkOut: "2026-04-15",
-                          nights: 5,
-                          guests: { adults: 2, children: 1, infants: 0 },
-                          totalPrice: 650.00,
-                          currency: "USD",
-                          status: "confirmed",
-                          specialRequests: "Early check-in if possible",
-                          createdAt: "2026-03-01T12:00:00Z",
-                          updatedAt: "2026-03-10T09:00:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        "/bookings/{bookingId}/modify/{modificationId}/decline": {
-          post: {
-            tags: ["Booking Modifications"],
-            summary: "Decline a modification request",
-            parameters: [
-              { name: "bookingId", in: "path", required: true, schema: { type: "string" }, example: "booking_101" },
-              { name: "modificationId", in: "path", required: true, schema: { type: "string" }, example: "mod_001" }
-            ],
-            requestBody: {
-              required: false,
-              content: {
-                "application/json": {
-                  schema: { type: "object", properties: { reason: { type: "string" } } },
-                  examples: {
-                    hostDeclines: {
-                      summary: "POST /bookings/booking_101/modify/mod_001/decline",
-                      value: { reason: "The property is already booked for the additional night requested." }
-                    }
-                  }
-                }
-              }
-            },
-            responses: {
-              "200": {
-                description: "Modification declined, booking unchanged",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/BookingModifyResponse" },
-                    examples: {
-                      declined: {
-                        summary: "Modification declined",
-                        value: {
-                          bookingId: "booking_101",
-                          modificationId: "mod_001",
-                          status: "declined",
-                          requestedBy: "guest",
-                          changes: { checkIn: "2026-04-10", checkOut: "2026-04-15", newTotalPrice: 650.00 },
-                          reason: "The property is already booked for the additional night requested.",
-                          requestedAt: "2026-03-10T08:00:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
         // ─────────────────────────────────────────
-        // CANCELLATIONS
+        // 8. CANCELLATIONS
         // ─────────────────────────────────────────
 
         "/bookings/{bookingId}/cancel": {
@@ -999,34 +712,6 @@ window.onload = function () {
                 example: "confirmed"
               },
               note: { type: "string", example: "Welcome! Looking forward to hosting you." }
-            }
-          },
-
-          CheckInRequest: {
-            type: "object",
-            properties: {
-              method: { type: "string", enum: ["self_checkin", "host_greeting", "smart_lock", "keypad"], example: "self_checkin" },
-              note: { type: "string", example: "Guest used the lockbox code" },
-              checkedInAt: { type: "string", format: "date-time", example: "2026-04-10T15:30:00Z" }
-            }
-          },
-
-          CheckOutRequest: {
-            type: "object",
-            properties: {
-              note: { type: "string", example: "Guest left on time, property in good condition" },
-              checkedOutAt: { type: "string", format: "date-time", example: "2026-04-14T11:00:00Z" }
-            }
-          },
-
-          CheckInOutResponse: {
-            type: "object",
-            properties: {
-              bookingId: { type: "string", example: "booking_101" },
-              status: { type: "string", example: "checked_in" },
-              method: { type: "string", example: "self_checkin", nullable: true },
-              note: { type: "string", example: "Guest used the lockbox code" },
-              timestamp: { type: "string", format: "date-time", example: "2026-04-10T15:30:00Z" }
             }
           },
 
