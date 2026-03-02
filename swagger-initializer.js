@@ -405,14 +405,6 @@ window.onload = function () {
               }
             }
           },
-          BulkResult: {
-            type: "object",
-            properties: {
-              created: { type: "integer", example: 0 },
-              updated: { type: "integer", example: 0 },
-              deleted: { type: "integer", example: 1 }
-            }
-          }
         }
       }
     },
