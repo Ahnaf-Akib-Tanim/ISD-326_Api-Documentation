@@ -15,7 +15,7 @@ window.onload = function () {
       paths: {
 
         // ─────────────────────────────────────────
-        // SEND NOTIFICATIONS
+        // 1. SEND NOTIFICATION
         // ─────────────────────────────────────────
 
         "/notifications/send": {
@@ -44,21 +44,6 @@ window.onload = function () {
                           checkOut: "2026-04-14",
                           totalPrice: 520.00,
                           currency: "USD"
-                        }
-                      }
-                    },
-                    bookingConfirmationPush: {
-                      summary: "POST /notifications/send — booking confirmation push alert",
-                      value: {
-                        userId: "cust001",
-                        channel: "push",
-                        type: "booking_confirmed",
-                        recipient: { name: "Alice Johnson", deviceToken: "fcm_token_abc123" },
-                        data: {
-                          bookingId: "booking_101",
-                          listingName: "Cozy Manhattan Loft",
-                          checkIn: "2026-04-10",
-                          checkOut: "2026-04-14"
                         }
                       }
                     },
@@ -147,112 +132,8 @@ window.onload = function () {
           }
         },
 
-        "/notifications/send/bulk": {
-          post: {
-            tags: ["Send Notifications"],
-            summary: "Send notifications to multiple users at once",
-            description: "Bulk dispatch of the same notification type to a list of users. Useful for platform-wide announcements, policy updates, or reminders.",
-            requestBody: {
-              required: true,
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/BulkSendNotificationRequest" },
-                  examples: {
-                    checkInReminders: {
-                      summary: "POST /notifications/send/bulk — check-in reminders for tomorrow's guests",
-                      value: {
-                        channel: "both",
-                        type: "checkin_reminder",
-                        notifications: [
-                          {
-                            userId: "cust001",
-                            recipient: { name: "Alice Johnson", email: "alice@example.com", deviceToken: "fcm_token_abc123" },
-                            data: { bookingId: "booking_101", listingName: "Cozy Manhattan Loft", checkIn: "2026-04-10", checkInTime: "15:00" }
-                          },
-                          {
-                            userId: "cust002",
-                            recipient: { name: "Bob Smith", email: "bob@example.com", deviceToken: "fcm_token_bob456" },
-                            data: { bookingId: "booking_102", listingName: "Sunny LA Studio", checkIn: "2026-04-10", checkInTime: "14:00" }
-                          }
-                        ]
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            responses: {
-              "201": {
-                description: "Bulk notifications dispatched",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/BulkDispatchResponse" },
-                    examples: {
-                      bulkResult: {
-                        summary: "Bulk send result",
-                        value: {
-                          total: 2,
-                          queued: 2,
-                          failed: 0,
-                          notifications: [
-                            { notificationId: "notif_e010", userId: "cust001", status: "queued" },
-                            { notificationId: "notif_e011", userId: "cust002", status: "queued" }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
         // ─────────────────────────────────────────
-        // NOTIFICATION TYPES (TEMPLATES)
-        // ─────────────────────────────────────────
-
-        "/notifications/types": {
-          get: {
-            tags: ["Notification Types"],
-            summary: "List all supported notification types",
-            description: "Returns all notification event types supported by the platform, along with which channels they support.",
-            responses: {
-              "200": {
-                description: "Notification types",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/NotificationTypeListResponse" },
-                    examples: {
-                      allTypes: {
-                        summary: "GET /notifications/types",
-                        value: {
-                          types: [
-                            { type: "booking_confirmed", description: "Sent to guest and host when a booking is confirmed", channels: ["email", "push"] },
-                            { type: "new_booking_request", description: "Sent to host when a guest requests a booking", channels: ["email", "push"] },
-                            { type: "booking_declined", description: "Sent to guest when host declines their request", channels: ["email", "push"] },
-                            { type: "booking_cancelled_by_guest", description: "Sent to host when a guest cancels", channels: ["email", "push"] },
-                            { type: "booking_cancelled_by_host", description: "Sent to guest when a host cancels", channels: ["email", "push"] },
-                            { type: "checkin_reminder", description: "Sent to guest 24h before check-in", channels: ["email", "push"] },
-                            { type: "checkout_reminder", description: "Sent to guest morning of checkout", channels: ["push"] },
-                            { type: "payment_received", description: "Sent to guest after successful payment", channels: ["email", "push"] },
-                            { type: "payout_sent", description: "Sent to host when a payout is processed", channels: ["email", "push"] },
-                            { type: "refund_processed", description: "Sent to guest when a refund is issued", channels: ["email", "push"] },
-                            { type: "booking_modified", description: "Sent when either party accepts a booking modification", channels: ["email", "push"] },
-                            { type: "review_request", description: "Sent to guest and host 24h after checkout to prompt reviews", channels: ["email", "push"] }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        // ─────────────────────────────────────────
-        // USER NOTIFICATION HISTORY
+        // 2. NOTIFICATION HISTORY (INBOX)
         // ─────────────────────────────────────────
 
         "/users/{userId}/notifications": {
@@ -339,6 +220,10 @@ window.onload = function () {
           }
         },
 
+        // ─────────────────────────────────────────
+        // 3. SINGLE NOTIFICATION DETAIL
+        // ─────────────────────────────────────────
+
         "/users/{userId}/notifications/{notificationId}": {
           get: {
             tags: ["Notification History"],
@@ -392,8 +277,12 @@ window.onload = function () {
           }
         },
 
+        // ─────────────────────────────────────────
+        // 4. MARK NOTIFICATION AS READ
+        // ─────────────────────────────────────────
+
         "/users/{userId}/notifications/{notificationId}/read": {
-          patch: {
+          put: {
             tags: ["Notification History"],
             summary: "Mark a notification as read",
             description: "Marks a specific notification as read. Updates the unread count in the user's notification inbox.",
@@ -409,7 +298,7 @@ window.onload = function () {
                     schema: { $ref: "#/components/schemas/NotificationReadResponse" },
                     examples: {
                       markedRead: {
-                        summary: "PATCH /users/cust001/notifications/notif_e001/read",
+                        summary: "PUT /users/cust001/notifications/notif_e001/read",
                         value: {
                           notificationId: "notif_e001",
                           userId: "cust001",
@@ -425,39 +314,8 @@ window.onload = function () {
           }
         },
 
-        "/users/{userId}/notifications/read-all": {
-          patch: {
-            tags: ["Notification History"],
-            summary: "Mark all notifications as read for a user",
-            description: "Marks every unread notification in the user's inbox as read in one call. Used when the user opens the notification panel.",
-            parameters: [
-              { name: "userId", in: "path", required: true, schema: { type: "string" }, example: "cust001" }
-            ],
-            responses: {
-              "200": {
-                description: "All notifications marked as read",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/BulkReadResponse" },
-                    examples: {
-                      allRead: {
-                        summary: "PATCH /users/cust001/notifications/read-all",
-                        value: {
-                          userId: "cust001",
-                          markedRead: 5,
-                          updatedAt: "2026-03-05T10:00:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
         // ─────────────────────────────────────────
-        // NOTIFICATION DELIVERY STATUS
+        // 5. NOTIFICATION DELIVERY STATUS
         // ─────────────────────────────────────────
 
         "/notifications/{notificationId}/status": {
@@ -522,59 +380,8 @@ window.onload = function () {
           }
         },
 
-        "/notifications/{notificationId}/resend": {
-          post: {
-            tags: ["Delivery Status"],
-            summary: "Resend a failed or undelivered notification",
-            description: "Retries delivery of a notification that failed or was never delivered. Only valid for notifications in 'failed' or 'queued' status.",
-            parameters: [
-              { name: "notificationId", in: "path", required: true, schema: { type: "string" }, example: "notif_e003" }
-            ],
-            responses: {
-              "200": {
-                description: "Notification re-queued for delivery",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/NotificationDispatchResponse" },
-                    examples: {
-                      requeued: {
-                        summary: "POST /notifications/notif_e003/resend",
-                        value: {
-                          notificationId: "notif_e003",
-                          userId: "cust001",
-                          channel: "push",
-                          type: "checkin_reminder",
-                          status: "queued",
-                          createdAt: "2026-04-09T09:30:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "422": {
-                description: "Cannot resend — notification already delivered",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      alreadyDelivered: {
-                        summary: "Resend rejected for delivered notification",
-                        value: {
-                          code: "ALREADY_DELIVERED",
-                          message: "Notification notif_e001 was already delivered at 2026-03-01T12:05:18Z and cannot be resent."
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
         // ─────────────────────────────────────────
-        // USER NOTIFICATION PREFERENCES
+        // 6 & 7. NOTIFICATION PREFERENCES
         // ─────────────────────────────────────────
 
         "/users/{userId}/notification-preferences": {
@@ -615,7 +422,7 @@ window.onload = function () {
               }
             }
           },
-          patch: {
+          put: {
             tags: ["Notification Preferences"],
             summary: "Update notification preferences for a user",
             description: "Allows a user to opt in or out of specific notification types per channel.",
@@ -629,15 +436,15 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/NotificationPreferencesUpdate" },
                   examples: {
                     disableCheckoutPush: {
-                      summary: "PATCH /users/cust001/notification-preferences — disable checkout push",
+                      summary: "PUT /users/cust001/notification-preferences — disable checkout push",
                       value: {
                         preferences: [
                           { type: "checkout_reminder", email: false, push: false }
                         ]
                       }
                     },
-                    muteMarketingOnly: {
-                      summary: "PATCH /users/cust001/notification-preferences — turn off review request emails",
+                    muteReviewRequest: {
+                      summary: "PUT /users/cust001/notification-preferences — turn off review request emails",
                       value: {
                         preferences: [
                           { type: "review_request", email: false, push: false }
@@ -645,7 +452,7 @@ window.onload = function () {
                       }
                     },
                     enableAll: {
-                      summary: "PATCH /users/cust001/notification-preferences — enable all channels",
+                      summary: "PUT /users/cust001/notification-preferences — enable all channels",
                       value: {
                         preferences: [
                           { type: "booking_confirmed", email: true, push: true },
@@ -688,36 +495,10 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // DEVICE TOKENS (PUSH REGISTRATION)
+        // 8. REGISTER DEVICE TOKEN (PUSH)
         // ─────────────────────────────────────────
 
         "/users/{userId}/device-tokens": {
-          get: {
-            tags: ["Device Tokens"],
-            summary: "List registered device tokens for push notifications",
-            parameters: [
-              { name: "userId", in: "path", required: true, schema: { type: "string" }, example: "cust001" }
-            ],
-            responses: {
-              "200": {
-                description: "Registered devices",
-                content: {
-                  "application/json": {
-                    schema: { type: "array", items: { $ref: "#/components/schemas/DeviceToken" } },
-                    examples: {
-                      devices: {
-                        summary: "GET /users/cust001/device-tokens",
-                        value: [
-                          { tokenId: "dtoken_001", deviceToken: "fcm_token_abc123", platform: "android", deviceName: "Pixel 7", registeredAt: "2026-01-15T10:00:00Z", isActive: true },
-                          { tokenId: "dtoken_002", deviceToken: "apns_token_xyz789", platform: "ios", deviceName: "iPhone 15", registeredAt: "2026-02-01T09:00:00Z", isActive: true }
-                        ]
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
           post: {
             tags: ["Device Tokens"],
             summary: "Register a device token for push notifications",
@@ -771,19 +552,6 @@ window.onload = function () {
               }
             }
           }
-        },
-
-        "/users/{userId}/device-tokens/{tokenId}": {
-          delete: {
-            tags: ["Device Tokens"],
-            summary: "Remove a device token",
-            description: "Deregisters a device from push notifications. Called on logout or when a token becomes invalid.",
-            parameters: [
-              { name: "userId", in: "path", required: true, schema: { type: "string" }, example: "cust001" },
-              { name: "tokenId", in: "path", required: true, schema: { type: "string" }, example: "dtoken_001" }
-            ],
-            responses: { "204": { description: "Device token removed successfully" } }
-          }
         }
       },
 
@@ -820,32 +588,6 @@ window.onload = function () {
             }
           },
 
-          BulkSendNotificationRequest: {
-            type: "object",
-            properties: {
-              channel: { type: "string", enum: ["email", "push", "both"], example: "both" },
-              type: { type: "string", example: "checkin_reminder" },
-              notifications: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    userId: { type: "string", example: "cust001" },
-                    recipient: {
-                      type: "object",
-                      properties: {
-                        name: { type: "string", example: "Alice Johnson" },
-                        email: { type: "string", example: "alice@example.com" },
-                        deviceToken: { type: "string", example: "fcm_token_abc123" }
-                      }
-                    },
-                    data: { type: "object", example: { bookingId: "booking_101", listingName: "Cozy Manhattan Loft", checkIn: "2026-04-10" } }
-                  }
-                }
-              }
-            }
-          },
-
           NotificationDispatchResponse: {
             type: "object",
             properties: {
@@ -855,43 +597,6 @@ window.onload = function () {
               type: { type: "string", example: "booking_confirmed" },
               status: { type: "string", enum: ["queued", "sent", "delivered", "failed"], example: "queued" },
               createdAt: { type: "string", format: "date-time", example: "2026-03-01T12:05:00Z" }
-            }
-          },
-
-          BulkDispatchResponse: {
-            type: "object",
-            properties: {
-              total: { type: "integer", example: 2 },
-              queued: { type: "integer", example: 2 },
-              failed: { type: "integer", example: 0 },
-              notifications: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    notificationId: { type: "string", example: "notif_e010" },
-                    userId: { type: "string", example: "cust001" },
-                    status: { type: "string", example: "queued" }
-                  }
-                }
-              }
-            }
-          },
-
-          NotificationTypeListResponse: {
-            type: "object",
-            properties: {
-              types: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    type: { type: "string", example: "booking_confirmed" },
-                    description: { type: "string", example: "Sent to guest and host when a booking is confirmed" },
-                    channels: { type: "array", items: { type: "string" }, example: ["email", "push"] }
-                  }
-                }
-              }
             }
           },
 
@@ -951,15 +656,6 @@ window.onload = function () {
               userId: { type: "string", example: "cust001" },
               status: { type: "string", example: "read" },
               readAt: { type: "string", format: "date-time", example: "2026-03-02T09:15:00Z" }
-            }
-          },
-
-          BulkReadResponse: {
-            type: "object",
-            properties: {
-              userId: { type: "string", example: "cust001" },
-              markedRead: { type: "integer", example: 5 },
-              updatedAt: { type: "string", format: "date-time", example: "2026-03-05T10:00:00Z" }
             }
           },
 
