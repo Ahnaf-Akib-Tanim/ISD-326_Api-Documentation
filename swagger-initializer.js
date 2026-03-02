@@ -319,42 +319,6 @@ window.onload = function () {
             }
           }
         },
-        "/hosts/{hostId}/bookings": {
-          get: {
-            summary: "List bookings",
-            parameters: [
-              { name: "hostId", in: "path", required: true, schema: { type: "string" }, example: "host123" },
-              { name: "start", in: "query", required: false, schema: { type: "string", format: "date" }, example: "2026-03-01" },
-              { name: "end", in: "query", required: false, schema: { type: "string", format: "date" }, example: "2026-03-31" }
-            ],
-            responses: {
-              "200": {
-                description: "Bookings list",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/BookingListResponse" },
-                    examples: {
-                      marchBookings: {
-                        summary: "GET /hosts/host123/bookings?start=2026-03-01&end=2026-03-31",
-                        value: {
-                          bookings: [
-                            { id: "booking1", startDate: "2026-03-02", endDate: "2026-03-04" },
-                            { id: "booking2", startDate: "2026-03-07", endDate: "2026-03-09" },
-                            { id: "booking3", startDate: "2026-03-15", endDate: "2026-03-18" }
-                          ]
-                        }
-                      },
-                      noBookings: {
-                        summary: "GET /hosts/host123/bookings — empty result",
-                        value: { bookings: [] }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
       },
       components: {
         securitySchemes: { bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
