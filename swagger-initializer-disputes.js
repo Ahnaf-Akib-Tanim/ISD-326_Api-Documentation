@@ -15,7 +15,7 @@ window.onload = function () {
       paths: {
 
         // ─────────────────────────────────────────
-        // RAISE A DISPUTE
+        // 1 & 2. RAISE A DISPUTE / LIST ALL DISPUTES
         // ─────────────────────────────────────────
 
         "/disputes": {
@@ -208,7 +208,7 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // DISPUTE DETAIL & MANAGEMENT
+        // 3. DISPUTE DETAIL
         // ─────────────────────────────────────────
 
         "/disputes/{disputeId}": {
@@ -280,7 +280,7 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // EVIDENCE SUBMISSION
+        // 4. EVIDENCE SUBMISSION
         // ─────────────────────────────────────────
 
         "/disputes/{disputeId}/evidence": {
@@ -374,51 +374,14 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // DISPUTE MESSAGING
+        // 5. DISPUTE MESSAGING
         // ─────────────────────────────────────────
 
         "/disputes/{disputeId}/messages": {
-          get: {
-            tags: ["Messaging"],
-            summary: "Get the message thread for a dispute",
-            description: "Returns the full chronological message thread between the guest, host, and admin for a dispute. All parties can view the thread.",
-            parameters: [
-              { name: "disputeId", in: "path", required: true, schema: { type: "string" }, example: "disp_001" },
-              { name: "page", in: "query", required: false, schema: { type: "integer", default: 1 }, example: 1 },
-              { name: "limit", in: "query", required: false, schema: { type: "integer", default: 20 }, example: 20 }
-            ],
-            responses: {
-              "200": {
-                description: "Dispute message thread",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/MessageThreadResponse" },
-                    examples: {
-                      thread: {
-                        summary: "GET /disputes/disp_001/messages",
-                        value: {
-                          disputeId: "disp_001",
-                          totalCount: 4,
-                          page: 1,
-                          limit: 20,
-                          messages: [
-                            { messageId: "msg_001", sentBy: "cust001", role: "guest", message: "I have submitted my screenshots. Please review as soon as possible.", sentAt: "2026-03-05T09:35:00Z" },
-                            { messageId: "msg_002", sentBy: "admin_007", role: "admin", message: "Thank you for submitting your evidence. We have reviewed the cancellation record and have contacted the host for their response. We aim to resolve this within 5 business days.", sentAt: "2026-03-06T10:00:00Z" },
-                            { messageId: "msg_003", sentBy: "host123", role: "host", message: "I cancelled due to a family emergency. I did not realise the refund policy applied automatically. I am happy to cooperate with the admin's decision.", sentAt: "2026-03-07T14:00:00Z" },
-                            { messageId: "msg_004", sentBy: "admin_007", role: "admin", message: "Thank you both for your responses. Based on the evidence and platform policy, we have determined that a full refund of $520.00 is owed to the guest. The refund will be processed within 3-5 business days.", sentAt: "2026-03-08T09:00:00Z" }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
           post: {
             tags: ["Messaging"],
             summary: "Send a message in a dispute thread",
-            description: "Allows the guest, host, or admin to post a message into the dispute thread. Used for clarifications, follow-up questions, and admin communications.",
+            description: "Allows the guest, host, or admin to post a message into the dispute thread. Used for clarifications, follow-up questions, and admin communications. The full message thread is returned as part of GET /disputes/{disputeId}.",
             parameters: [
               { name: "disputeId", in: "path", required: true, schema: { type: "string" }, example: "disp_001" }
             ],
@@ -471,11 +434,11 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // ADMIN ACTIONS
+        // 6. ASSIGN DISPUTE TO ADMIN
         // ─────────────────────────────────────────
 
         "/disputes/{disputeId}/assign": {
-          patch: {
+          put: {
             tags: ["Admin Actions"],
             summary: "Assign a dispute to an admin",
             description: "Assigns the dispute case to a specific admin agent for investigation. Also updates the dispute status to under_review and sets the priority level.",
@@ -489,11 +452,11 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/AssignRequest" },
                   examples: {
                     assign: {
-                      summary: "PATCH /disputes/disp_001/assign — assign to admin and set priority",
+                      summary: "PUT /disputes/disp_001/assign — assign to admin and set priority",
                       value: { adminId: "admin_007", priority: "high", note: "High-value booking involving full refund claim. Policy clearly favours guest — expedite." }
                     },
                     escalate: {
-                      summary: "PATCH /disputes/disp_001/assign — escalate to senior admin",
+                      summary: "PUT /disputes/disp_001/assign — escalate to senior admin",
                       value: { adminId: "admin_001", priority: "urgent", note: "Escalated due to unresolved harassment claim. Senior review required." }
                     }
                   }
@@ -526,59 +489,9 @@ window.onload = function () {
           }
         },
 
-        "/disputes/{disputeId}/status": {
-          patch: {
-            tags: ["Admin Actions"],
-            summary: "Update the status of a dispute",
-            description: "Allows an admin to move a dispute through its lifecycle — e.g. from open to under_review, to awaiting_evidence, to resolved.",
-            parameters: [
-              { name: "disputeId", in: "path", required: true, schema: { type: "string" }, example: "disp_001" }
-            ],
-            requestBody: {
-              required: true,
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/StatusUpdateRequest" },
-                  examples: {
-                    moveToAwaitingEvidence: {
-                      summary: "PATCH /disputes/disp_001/status — request more evidence from host",
-                      value: { status: "awaiting_evidence", note: "Host has not yet provided documentation. Extending evidence window by 48 hours." }
-                    },
-                    moveToUnderReview: {
-                      summary: "PATCH /disputes/disp_001/status — mark as under review",
-                      value: { status: "under_review", note: "All evidence received. Admin team now reviewing case." }
-                    },
-                    escalate: {
-                      summary: "PATCH /disputes/disp_001/status — escalate case",
-                      value: { status: "escalated", note: "Case involves potential fraud. Escalated to trust and safety team." }
-                    }
-                  }
-                }
-              }
-            },
-            responses: {
-              "200": {
-                description: "Dispute status updated",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/Dispute" },
-                    examples: {
-                      statusUpdated: {
-                        summary: "Status changed to awaiting_evidence",
-                        value: {
-                          disputeId: "disp_001",
-                          status: "awaiting_evidence",
-                          assignedAdminId: "admin_007",
-                          updatedAt: "2026-03-07T08:30:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
+        // ─────────────────────────────────────────
+        // 7. RESOLVE DISPUTE
+        // ─────────────────────────────────────────
 
         "/disputes/{disputeId}/resolve": {
           post: {
@@ -673,70 +586,6 @@ window.onload = function () {
                       notReady: {
                         summary: "Dispute not ready for resolution",
                         value: { code: "DISPUTE_NOT_REVIEWABLE", message: "Dispute disp_001 is still awaiting evidence from the host. Resolution cannot be issued yet." }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        // ─────────────────────────────────────────
-        // USER DISPUTE HISTORY
-        // ─────────────────────────────────────────
-
-        "/users/{userId}/disputes": {
-          get: {
-            tags: ["Disputes"],
-            summary: "Get dispute history for a user (guest or host)",
-            description: "Returns all disputes a user has been involved in — either as the party who raised the dispute or the party it was raised against. Useful for the user's account history and for admin moderation checks.",
-            parameters: [
-              { name: "userId", in: "path", required: true, schema: { type: "string" }, example: "cust001" },
-              {
-                name: "role", in: "query", required: false,
-                schema: { type: "string", enum: ["raised_by", "against"] },
-                example: "raised_by",
-                description: "Filter by disputes raised by or raised against this user"
-              },
-              {
-                name: "status", in: "query", required: false,
-                schema: { type: "string", enum: ["open", "under_review", "awaiting_evidence", "resolved", "closed", "escalated"] },
-                example: "resolved"
-              },
-              { name: "page", in: "query", required: false, schema: { type: "integer", default: 1 }, example: 1 },
-              { name: "limit", in: "query", required: false, schema: { type: "integer", default: 10 }, example: 10 }
-            ],
-            responses: {
-              "200": {
-                description: "User dispute history",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/DisputeListResponse" },
-                    examples: {
-                      guestHistory: {
-                        summary: "GET /users/cust001/disputes — all disputes by guest",
-                        value: {
-                          totalCount: 2,
-                          page: 1,
-                          limit: 10,
-                          disputes: [
-                            {
-                              disputeId: "disp_001",
-                              bookingId: "booking_101",
-                              raisedByRole: "guest",
-                              againstUserRole: "host",
-                              category: "refund_dispute",
-                              subject: "Host refused refund after cancelling booking",
-                              claimedAmount: 520.00,
-                              currency: "USD",
-                              status: "resolved",
-                              priority: "high",
-                              assignedAdminId: "admin_007",
-                              createdAt: "2026-03-05T09:00:00Z"
-                            }
-                          ]
-                        }
                       }
                     }
                   }
@@ -860,31 +709,12 @@ window.onload = function () {
             }
           },
 
-          MessageThreadResponse: {
-            type: "object",
-            properties: {
-              disputeId: { type: "string", example: "disp_001" },
-              totalCount: { type: "integer", example: 4 },
-              page: { type: "integer", example: 1 },
-              limit: { type: "integer", example: 20 },
-              messages: { type: "array", items: { $ref: "#/components/schemas/Message" } }
-            }
-          },
-
           AssignRequest: {
             type: "object",
             properties: {
               adminId: { type: "string", example: "admin_007" },
               priority: { type: "string", enum: ["low", "normal", "high", "urgent"], example: "high" },
               note: { type: "string", example: "High-value booking. Policy clearly favours guest — expedite." }
-            }
-          },
-
-          StatusUpdateRequest: {
-            type: "object",
-            properties: {
-              status: { type: "string", enum: ["open", "under_review", "awaiting_evidence", "escalated", "closed"], example: "awaiting_evidence" },
-              note: { type: "string", example: "Host has not yet provided documentation. Extending evidence window by 48 hours." }
             }
           },
 
