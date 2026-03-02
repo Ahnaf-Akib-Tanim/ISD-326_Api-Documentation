@@ -1,0 +1,596 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Host Calendar & Availability Control API",
+    "version": "1.0.0",
+    "description": "APIs to manage host calendar, availability windows, blocks, and to check conflicts for bookings."
+  },
+  "servers": [
+    { "url": "https://api.example.com", "description": "Production" },
+    { "url": "http://localhost:3000", "description": "Local dev" }
+  ],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/hosts/{hostId}/calendar": {
+      "get": {
+        "summary": "Get calendar days for a host in a date range",
+        "parameters": [
+          {
+            "name": "hostId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date" },
+            "description": "Start date (YYYY-MM-DD)"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date" },
+            "description": "End date (YYYY-MM-DD)"
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "IANA timezone (e.g. Asia/Dhaka)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Calendar days",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CalendarResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/hosts/{hostId}/availability": {
+      "get": {
+        "summary": "Get availability rules / slots for host",
+        "parameters": [
+          {
+            "name": "hostId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of availability slots and default rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AvailabilitySlot" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create an availability slot or rule",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilitySlotCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AvailabilitySlot" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts/{hostId}/availability/{slotId}": {
+      "put": {
+        "summary": "Update an availability slot",
+        "parameters": [
+          {
+            "name": "hostId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "slotId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilitySlotUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated slot",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AvailabilitySlot" }
+              }
+            }
+          },
+          "404": { "description": "Not found" }
+        }
+      },
+      "delete": {
+        "summary": "Delete an availability slot",
+        "parameters": [
+          {
+            "name": "hostId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "slotId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/hosts/{hostId}/bulk-availability": {
+      "post": {
+        "summary": "Bulk create/update availability by date ranges",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkAvailabilityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bulk result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BulkResult" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts/{hostId}/block-dates": {
+      "post": {
+        "summary": "Block a date range (mark unavailable)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BlockDatesRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Blocked",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BlockRecord" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts/{hostId}/unblock-dates": {
+      "post": {
+        "summary": "Remove block(s) for a date range",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UnblockDatesRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unblocked",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BulkResult" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts/{hostId}/check-availability": {
+      "post": {
+        "summary": "Check if a given range is available (no conflicts with blocks or bookings)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckAvailabilityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Availability check result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckAvailabilityResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts/{hostId}/bookings": {
+      "get": {
+        "summary": "List bookings for the host (useful to detect conflicts)",
+        "parameters": [
+          {
+            "name": "hostId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 25 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bookings list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BookingListResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "CalendarDay": {
+        "type": "object",
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "status": {
+            "type": "string",
+            "enum": ["available", "booked", "blocked", "pending"],
+            "description": "Day status"
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "description": "Per-night price if applicable"
+          },
+          "minNights": { "type": "integer", "nullable": true },
+          "maxNights": { "type": "integer", "nullable": true },
+          "source": {
+            "type": "string",
+            "description": "manual | rule | booking | system"
+          }
+        },
+        "example": {
+          "date": "2026-03-01",
+          "status": "available",
+          "price": 35.0,
+          "minNights": 1,
+          "maxNights": 14,
+          "source": "rule"
+        }
+      },
+      "CalendarResponse": {
+        "type": "object",
+        "properties": {
+          "hostId": { "type": "string" },
+          "start": { "type": "string", "format": "date" },
+          "end": { "type": "string", "format": "date" },
+          "timezone": { "type": "string" },
+          "days": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CalendarDay" }
+          }
+        }
+      },
+      "AvailabilitySlot": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "hostId": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["range", "recurring", "rule"],
+            "description": "range = specific date range; recurring = weekly pattern; rule = special rule"
+          },
+          "startDate": { "type": "string", "format": "date", "nullable": true },
+          "endDate": { "type": "string", "format": "date", "nullable": true },
+          "recurrence": {
+            "type": "object",
+            "nullable": true,
+            "description": "when type=recurring; e.g. weekdays"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["available", "unavailable"],
+            "default": "available"
+          },
+          "price": { "type": "number", "format": "float", "nullable": true },
+          "minNights": { "type": "integer", "nullable": true },
+          "maxNights": { "type": "integer", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AvailabilitySlotCreate": {
+        "type": "object",
+        "required": ["hostId", "type"],
+        "properties": {
+          "hostId": { "type": "string" },
+          "type": { "type": "string", "enum": ["range", "recurring", "rule"] },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "recurrence": {
+            "type": "object",
+            "description": "e.g. { \"freq\": \"weekly\", \"byDay\": [\"mon\",\"tue\"] }"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["available", "unavailable"],
+            "default": "available"
+          },
+          "price": { "type": "number", "format": "float" },
+          "minNights": { "type": "integer" },
+          "maxNights": { "type": "integer" }
+        },
+        "example": {
+          "hostId": "host_123",
+          "type": "range",
+          "startDate": "2026-03-10",
+          "endDate": "2026-03-20",
+          "status": "unavailable"
+        }
+      },
+      "AvailabilitySlotUpdate": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["available", "unavailable"] },
+          "price": { "type": "number" },
+          "minNights": { "type": "integer" },
+          "maxNights": { "type": "integer" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" }
+        }
+      },
+      "BulkAvailabilityRequest": {
+        "type": "object",
+        "properties": {
+          "hostId": { "type": "string" },
+          "operations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "enum": ["create", "update", "delete", "block"]
+                },
+                "payload": { "type": "object" }
+              }
+            }
+          }
+        }
+      },
+      "BlockDatesRequest": {
+        "type": "object",
+        "required": ["hostId", "startDate", "endDate"],
+        "properties": {
+          "hostId": { "type": "string" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "reason": { "type": "string" },
+          "recurring": {
+            "type": "boolean",
+            "description": "If true and recurrence pattern provided, block repeatedly"
+          },
+          "recurrence": { "type": "object", "nullable": true }
+        },
+        "example": {
+          "hostId": "host_123",
+          "startDate": "2026-04-01",
+          "endDate": "2026-04-03",
+          "reason": "maintenance"
+        }
+      },
+      "UnblockDatesRequest": {
+        "type": "object",
+        "properties": {
+          "hostId": { "type": "string" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "blockIds": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "BlockRecord": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "hostId": { "type": "string" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "reason": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CheckAvailabilityRequest": {
+        "type": "object",
+        "required": ["hostId", "startDate", "endDate"],
+        "properties": {
+          "hostId": { "type": "string" },
+          "propertyId": { "type": "string" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "guests": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "CheckAvailabilityResult": {
+        "type": "object",
+        "properties": {
+          "available": { "type": "boolean" },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string" },
+                "id": { "type": "string" },
+                "startDate": { "type": "string", "format": "date" },
+                "endDate": { "type": "string", "format": "date" }
+              }
+            }
+          },
+          "message": { "type": "string" }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "propertyId": { "type": "string" },
+          "hostId": { "type": "string" },
+          "guestId": { "type": "string" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "status": {
+            "type": "string",
+            "enum": ["confirmed", "cancelled", "pending"]
+          },
+          "totalPrice": { "type": "number", "format": "float" }
+        }
+      },
+      "BookingListResponse": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" },
+          "bookings": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Booking" }
+          }
+        }
+      },
+      "BulkResult": {
+        "type": "object",
+        "properties": {
+          "created": { "type": "integer" },
+          "updated": { "type": "integer" },
+          "deleted": { "type": "integer" },
+          "errors": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "details": { "type": "object", "additionalProperties": true }
+        },
+        "example": {
+          "code": "INVALID_RANGE",
+          "message": "endDate must be after startDate"
+        }
+      }
+    }
+  }
+}
