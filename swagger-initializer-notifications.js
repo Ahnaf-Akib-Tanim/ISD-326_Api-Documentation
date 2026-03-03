@@ -316,69 +316,7 @@ window.onload = function () {
 
         // ─────────────────────────────────────────
         // 5. NOTIFICATION DELIVERY STATUS
-        // ─────────────────────────────────────────
-
-        "/notifications/{notificationId}/status": {
-          get: {
-            tags: ["Delivery Status"],
-            summary: "Get delivery status of a notification",
-            description: "Returns real-time delivery status of a dispatched notification — queued, sent, delivered, or failed. Useful for debugging undelivered alerts.",
-            parameters: [
-              { name: "notificationId", in: "path", required: true, schema: { type: "string" }, example: "notif_e001" }
-            ],
-            responses: {
-              "200": {
-                description: "Delivery status",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/DeliveryStatusResponse" },
-                    examples: {
-                      delivered: {
-                        summary: "GET /notifications/notif_e001/status — delivered",
-                        value: {
-                          notificationId: "notif_e001",
-                          channel: "email",
-                          type: "booking_confirmed",
-                          status: "delivered",
-                          queuedAt: "2026-03-01T12:05:00Z",
-                          sentAt: "2026-03-01T12:05:10Z",
-                          deliveredAt: "2026-03-01T12:05:18Z",
-                          failureReason: null
-                        }
-                      },
-                      failed: {
-                        summary: "GET /notifications/notif_e003/status — failed",
-                        value: {
-                          notificationId: "notif_e003",
-                          channel: "push",
-                          type: "checkin_reminder",
-                          status: "failed",
-                          queuedAt: "2026-04-09T08:00:00Z",
-                          sentAt: "2026-04-09T08:00:05Z",
-                          deliveredAt: null,
-                          failureReason: "Device token expired or invalid"
-                        }
-                      },
-                      queued: {
-                        summary: "GET /notifications/notif_e004/status — still queued",
-                        value: {
-                          notificationId: "notif_e004",
-                          channel: "email",
-                          type: "payout_sent",
-                          status: "queued",
-                          queuedAt: "2026-04-14T09:00:00Z",
-                          sentAt: null,
-                          deliveredAt: null,
-                          failureReason: null
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
+        // ────────────────────────────────────────
 
         // ─────────────────────────────────────────
         // 6 & 7. NOTIFICATION PREFERENCES
@@ -497,62 +435,6 @@ window.onload = function () {
         // ─────────────────────────────────────────
         // 8. REGISTER DEVICE TOKEN (PUSH)
         // ─────────────────────────────────────────
-
-        "/users/{userId}/device-tokens": {
-          post: {
-            tags: ["Device Tokens"],
-            summary: "Register a device token for push notifications",
-            description: "Called when a user logs in on a new device or when the OS issues a new push token. Required before push notifications can be delivered.",
-            parameters: [
-              { name: "userId", in: "path", required: true, schema: { type: "string" }, example: "cust001" }
-            ],
-            requestBody: {
-              required: true,
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/DeviceTokenRegisterRequest" },
-                  examples: {
-                    androidToken: {
-                      summary: "POST /users/cust001/device-tokens — register Android (FCM)",
-                      value: { deviceToken: "fcm_token_abc123", platform: "android", deviceName: "Pixel 7" }
-                    },
-                    iosToken: {
-                      summary: "POST /users/cust001/device-tokens — register iOS (APNs)",
-                      value: { deviceToken: "apns_token_xyz789", platform: "ios", deviceName: "iPhone 15" }
-                    },
-                    webToken: {
-                      summary: "POST /users/cust001/device-tokens — register web browser",
-                      value: { deviceToken: "web_push_token_def456", platform: "web", deviceName: "Chrome on MacBook" }
-                    }
-                  }
-                }
-              }
-            },
-            responses: {
-              "201": {
-                description: "Device token registered",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/DeviceToken" },
-                    examples: {
-                      registered: {
-                        summary: "Token registered successfully",
-                        value: {
-                          tokenId: "dtoken_003",
-                          deviceToken: "web_push_token_def456",
-                          platform: "web",
-                          deviceName: "Chrome on MacBook",
-                          registeredAt: "2026-03-01T08:00:00Z",
-                          isActive: true
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
       },
 
       components: {
