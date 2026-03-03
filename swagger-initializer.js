@@ -52,7 +52,7 @@ window.onload = function () {
         },
         "/hosts/{hostId}/availability": {
           get: {
-            summary: "Get availability slots for host",
+            summary: "Get slot status for host",
             parameters: [
               { name: "hostId", in: "path", required: true, schema: { type: "string" }, example: "host123" }
             ],
