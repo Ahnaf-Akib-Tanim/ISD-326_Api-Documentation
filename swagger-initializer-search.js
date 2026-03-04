@@ -42,13 +42,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Search results",
+                description: "Search results returned successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/SearchResultsResponse" },
                     examples: {
                       apartmentSearch: {
-                        summary: "GET /search/listings?location=New York, NY&checkIn=2026-04-10&checkOut=2026-04-14&adults=2&propertyType=apartment",
+                        summary: "Apartments in New York",
                         value: {
                           query: { location: "New York, NY", checkIn: "2026-04-10", checkOut: "2026-04-14", adults: 2, children: 0, propertyType: "apartment" },
                           totalCount: 148,
@@ -95,7 +95,7 @@ window.onload = function () {
                         }
                       },
                       hotelSearch: {
-                        summary: "GET /search/listings?location=Paris, France&propertyType=hotel&minRating=4.5&sortBy=rating",
+                        summary: "Hotels in Paris with high rating",
                         value: {
                           query: { location: "Paris, France", propertyType: "hotel", minRating: 4.5, sortBy: "rating" },
                           totalCount: 37,
@@ -126,6 +126,38 @@ window.onload = function () {
                     }
                   }
                 }
+              },
+              "400": {
+                description: "Bad Request — missing required parameter or invalid filter values",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      missingLocation: {
+                        summary: "Location not provided",
+                        value: { code: "MISSING_PARAMETER", message: "Query parameter 'location' is required." }
+                      },
+                      invalidDateRange: {
+                        summary: "Check-out before check-in",
+                        value: { code: "INVALID_DATE_RANGE", message: "'checkOut' date must be after 'checkIn' date." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Not Found — no listings available for the given location",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      noResults: {
+                        summary: "Location not recognized",
+                        value: { code: "LOCATION_NOT_FOUND", message: "No listings were found for location 'Xyz Village, ZZ'. Try a different search." }
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -144,13 +176,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Full listing details",
+                description: "Full listing details retrieved successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/ListingDetail" },
                     examples: {
                       listingDetail: {
-                        summary: "GET /search/listings/listing_nyc_001?checkIn=2026-04-10&checkOut=2026-04-14&adults=2",
+                        summary: "Available listing with pricing breakdown",
                         value: {
                           listingId: "listing_nyc_001",
                           title: "Cozy Manhattan Loft in Midtown",
@@ -201,64 +233,50 @@ window.onload = function () {
                           instantBook: true,
                           availabilityStatus: "available"
                         }
+                      },
+                      unavailableListing: {
+                        summary: "Listing exists but unavailable for dates",
+                        value: {
+                          listingId: "listing_nyc_003",
+                          title: "SoHo Penthouse with Rooftop Access",
+                          propertyType: "apartment",
+                          location: { address: "120 Spring St", city: "New York", neighborhood: "SoHo", state: "NY", country: "US", lat: 40.7243, lng: -74.0018 },
+                          pricePerNight: 275.00,
+                          currency: "USD",
+                          totalPrice: null,
+                          availabilityStatus: "unavailable",
+                          instantBook: false,
+                          rating: 4.91,
+                          reviewCount: 76
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                description: "Unauthorized — bearer token missing or expired",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      unauthorized: {
+                        summary: "Token expired",
+                        value: { code: "UNAUTHORIZED", message: "Your session has expired. Please re-authenticate." }
                       }
                     }
                   }
                 }
               },
               "404": {
-                description: "Listing not found",
+                description: "Not Found — listing does not exist",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/ErrorResponse" },
                     examples: {
                       notFound: {
-                        summary: "Listing does not exist",
-                        value: { code: "LISTING_NOT_FOUND", message: "No listing found with ID listing_xyz_999" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        "/search/autocomplete": {
-          get: {
-            tags: ["Search"],
-            summary: "Autocomplete location search input",
-            description: "Returns location suggestions as the user types in the search box — cities, neighborhoods, landmarks, and addresses. Used to power the live search dropdown.",
-            parameters: [
-              { name: "q", in: "query", required: true, schema: { type: "string" }, example: "Bar", description: "Partial search text (min 2 characters)" },
-              { name: "limit", in: "query", required: false, schema: { type: "integer", default: 5 }, example: 5 }
-            ],
-            responses: {
-              "200": {
-                description: "Autocomplete suggestions",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/AutocompleteResponse" },
-                    examples: {
-                      citySearch: {
-                        summary: "GET /search/autocomplete?q=Bar",
-                        value: {
-                          query: "Bar",
-                          suggestions: [
-                            { placeId: "place_001", label: "Barcelona, Spain", type: "city", country: "ES", lat: 41.3851, lng: 2.1734 },
-                            { placeId: "place_002", label: "Bari, Italy", type: "city", country: "IT", lat: 41.1177, lng: 16.8719 },
-                            { placeId: "place_003", label: "Baro District, Nigeria", type: "region", country: "NG", lat: 8.6753, lng: 7.3358 }
-                          ]
-                        }
-                      },
-                      landmarkSearch: {
-                        summary: "GET /search/autocomplete?q=Eiffel",
-                        value: {
-                          query: "Eiffel",
-                          suggestions: [
-                            { placeId: "place_010", label: "Eiffel Tower, Paris, France", type: "landmark", country: "FR", lat: 48.8584, lng: 2.2945 }
-                          ]
-                        }
+                        summary: "Listing not found",
+                        value: { code: "LISTING_NOT_FOUND", message: "No listing found with ID 'listing_xyz_999'." }
                       }
                     }
                   }
@@ -283,48 +301,39 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Recent search history",
+                description: "Recent search history retrieved successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/RecentSearchesResponse" },
                     examples: {
                       recentSearches: {
-                        summary: "GET /customers/cust001/recent-searches?limit=5",
+                        summary: "Customer with 3 recent searches",
                         value: {
                           customerId: "cust001",
                           searches: [
-                            {
-                              searchId: "srch_091",
-                              location: "New York, NY",
-                              checkIn: "2026-04-10",
-                              checkOut: "2026-04-14",
-                              adults: 2,
-                              children: 1,
-                              propertyType: "apartment",
-                              searchedAt: "2026-03-01T10:00:00Z"
-                            },
-                            {
-                              searchId: "srch_088",
-                              location: "Tokyo, Japan",
-                              checkIn: "2026-06-01",
-                              checkOut: "2026-06-08",
-                              adults: 2,
-                              children: 0,
-                              propertyType: "any",
-                              searchedAt: "2026-02-27T14:30:00Z"
-                            },
-                            {
-                              searchId: "srch_075",
-                              location: "Barcelona, Spain",
-                              checkIn: "2026-05-15",
-                              checkOut: "2026-05-20",
-                              adults: 2,
-                              children: 0,
-                              propertyType: "apartment",
-                              searchedAt: "2026-02-20T09:15:00Z"
-                            }
+                            { searchId: "srch_091", location: "New York, NY", checkIn: "2026-04-10", checkOut: "2026-04-14", adults: 2, children: 1, propertyType: "apartment", searchedAt: "2026-03-01T10:00:00Z" },
+                            { searchId: "srch_088", location: "Tokyo, Japan", checkIn: "2026-06-01", checkOut: "2026-06-08", adults: 2, children: 0, propertyType: "any", searchedAt: "2026-02-27T14:30:00Z" },
+                            { searchId: "srch_075", location: "Barcelona, Spain", checkIn: "2026-05-15", checkOut: "2026-05-20", adults: 2, children: 0, propertyType: "apartment", searchedAt: "2026-02-20T09:15:00Z" }
                           ]
                         }
+                      },
+                      emptyHistory: {
+                        summary: "No search history for customer",
+                        value: { customerId: "cust009", searches: [] }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Not Found — customer does not exist",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      customerNotFound: {
+                        summary: "Customer not found",
+                        value: { code: "CUSTOMER_NOT_FOUND", message: "No customer found with ID 'cust999'." }
                       }
                     }
                   }
@@ -341,14 +350,46 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Search history cleared",
+                description: "Search history cleared successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/ClearSearchesResponse" },
                     examples: {
                       cleared: {
-                        summary: "DELETE /customers/cust001/recent-searches",
-                        value: { customerId: "cust001", deleted: 5, message: "Search history cleared successfully" }
+                        summary: "History deleted",
+                        value: { customerId: "cust001", deleted: 5, message: "Search history cleared successfully." }
+                      },
+                      alreadyEmpty: {
+                        summary: "No history to clear",
+                        value: { customerId: "cust001", deleted: 0, message: "No search history found to clear." }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                description: "Unauthorized — caller cannot clear another user's history",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      unauthorized: {
+                        summary: "Not authenticated",
+                        value: { code: "UNAUTHORIZED", message: "Authentication token is missing or has expired." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Not Found — customer does not exist",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      notFound: {
+                        summary: "Customer not found",
+                        value: { code: "CUSTOMER_NOT_FOUND", message: "No customer found with ID 'cust999'." }
                       }
                     }
                   }
@@ -369,52 +410,46 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Personalised destination suggestions",
+                description: "Personalised destination suggestions returned successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/SuggestedDestinationsResponse" },
                     examples: {
                       personalised: {
-                        summary: "GET /customers/cust001/suggested-destinations?limit=6",
+                        summary: "Suggestions based on recent activity",
                         value: {
                           customerId: "cust001",
                           basedOn: ["recent_searches", "past_bookings", "seasonal_trends"],
                           destinations: [
-                            {
-                              destinationId: "dest_tokyo",
-                              name: "Tokyo",
-                              country: "Japan",
-                              thumbnail: "https://cdn.example.com/destinations/tokyo.jpg",
-                              avgPricePerNight: 95.00,
-                              currency: "USD",
-                              availableListings: 340,
-                              reason: "You recently searched Tokyo",
-                              tags: ["trending", "culture", "food"]
-                            },
-                            {
-                              destinationId: "dest_barcelona",
-                              name: "Barcelona",
-                              country: "Spain",
-                              thumbnail: "https://cdn.example.com/destinations/barcelona.jpg",
-                              avgPricePerNight: 110.00,
-                              currency: "USD",
-                              availableListings: 275,
-                              reason: "Popular with guests who stayed in New York",
-                              tags: ["beach", "architecture", "nightlife"]
-                            },
-                            {
-                              destinationId: "dest_bali",
-                              name: "Bali",
-                              country: "Indonesia",
-                              thumbnail: "https://cdn.example.com/destinations/bali.jpg",
-                              avgPricePerNight: 65.00,
-                              currency: "USD",
-                              availableListings: 510,
-                              reason: "Trending this season",
-                              tags: ["beach", "wellness", "nature"]
-                            }
+                            { destinationId: "dest_tokyo", name: "Tokyo", country: "Japan", thumbnail: "https://cdn.example.com/destinations/tokyo.jpg", avgPricePerNight: 95.00, currency: "USD", availableListings: 340, reason: "You recently searched Tokyo", tags: ["trending", "culture", "food"] },
+                            { destinationId: "dest_barcelona", name: "Barcelona", country: "Spain", thumbnail: "https://cdn.example.com/destinations/barcelona.jpg", avgPricePerNight: 110.00, currency: "USD", availableListings: 275, reason: "Popular with guests who stayed in New York", tags: ["beach", "architecture", "nightlife"] },
+                            { destinationId: "dest_bali", name: "Bali", country: "Indonesia", thumbnail: "https://cdn.example.com/destinations/bali.jpg", avgPricePerNight: 65.00, currency: "USD", availableListings: 510, reason: "Trending this season", tags: ["beach", "wellness", "nature"] }
                           ]
                         }
+                      },
+                      noHistory: {
+                        summary: "New customer — fallback to trending",
+                        value: {
+                          customerId: "cust009",
+                          basedOn: ["seasonal_trends"],
+                          destinations: [
+                            { destinationId: "dest_paris", name: "Paris", country: "France", thumbnail: "https://cdn.example.com/destinations/paris.jpg", avgPricePerNight: 180.00, currency: "USD", availableListings: 920, reason: "Trending worldwide", tags: ["romance", "culture", "food"] }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Not Found — customer does not exist",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      notFound: {
+                        summary: "Customer not found",
+                        value: { code: "CUSTOMER_NOT_FOUND", message: "No customer found with ID 'cust999'." }
                       }
                     }
                   }
@@ -439,13 +474,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Trending destinations",
+                description: "Trending destinations retrieved successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/TrendingDestinationsResponse" },
                     examples: {
                       worldwide: {
-                        summary: "GET /destinations/trending?region=worldwide&limit=10",
+                        summary: "Top 5 worldwide trending destinations",
                         value: {
                           region: "worldwide",
                           period: "last_7_days",
@@ -459,7 +494,7 @@ window.onload = function () {
                         }
                       },
                       asia: {
-                        summary: "GET /destinations/trending?region=asia&limit=5",
+                        summary: "Top trending in Asia",
                         value: {
                           region: "asia",
                           period: "last_7_days",
@@ -469,6 +504,20 @@ window.onload = function () {
                             { rank: 3, destinationId: "dest_bangkok", name: "Bangkok", country: "Thailand", searchVolumeDelta: "+15%", avgPricePerNight: 55.00, currency: "USD", availableListings: 680, thumbnail: "https://cdn.example.com/destinations/bangkok.jpg", tags: ["food", "temples", "nightlife"] }
                           ]
                         }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": {
+                description: "Bad Request — invalid region value",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      invalidRegion: {
+                        summary: "Unsupported region filter",
+                        value: { code: "INVALID_PARAMETER", message: "Region 'middle_east' is not supported. Accepted values: worldwide, asia, europe, americas, africa, oceania." }
                       }
                     }
                   }
@@ -493,13 +542,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Top listings in destination",
+                description: "Top listings in destination retrieved successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/SearchResultsResponse" },
                     examples: {
                       tokyoListings: {
-                        summary: "GET /destinations/dest_tokyo/listings?checkIn=2026-06-01&checkOut=2026-06-08&adults=2",
+                        summary: "Top listings in Tokyo",
                         value: {
                           query: { destinationId: "dest_tokyo", checkIn: "2026-06-01", checkOut: "2026-06-08", adults: 2 },
                           totalCount: 340,
@@ -544,6 +593,20 @@ window.onload = function () {
                             }
                           ]
                         }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Not Found — destination ID does not exist",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      notFound: {
+                        summary: "Destination not found",
+                        value: { code: "DESTINATION_NOT_FOUND", message: "No destination found with ID 'dest_xyz999'." }
                       }
                     }
                   }
@@ -665,27 +728,6 @@ window.onload = function () {
               cancellationPolicy: { type: "string", enum: ["flexible", "moderate", "strict"], example: "moderate" },
               instantBook: { type: "boolean", example: true },
               availabilityStatus: { type: "string", enum: ["available", "unavailable"], example: "available" }
-            }
-          },
-
-          AutocompleteResponse: {
-            type: "object",
-            properties: {
-              query: { type: "string", example: "Bar" },
-              suggestions: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    placeId: { type: "string", example: "place_001" },
-                    label: { type: "string", example: "Barcelona, Spain" },
-                    type: { type: "string", enum: ["city", "region", "landmark", "address"], example: "city" },
-                    country: { type: "string", example: "ES" },
-                    lat: { type: "number", example: 41.3851 },
-                    lng: { type: "number", example: 2.1734 }
-                  }
-                }
-              }
             }
           },
 
