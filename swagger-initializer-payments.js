@@ -96,48 +96,6 @@ window.onload = function () {
                   }
                 }
               },
-              "401": {
-                description: "Unauthorized — missing or invalid bearer token",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      unauthorized: {
-                        summary: "No token provided",
-                        value: { code: 401, error: "Unauthorized", message: "Authentication token is missing or has expired." }
-                      }
-                    }
-                  }
-                }
-              },
-              "404": {
-                description: "Not Found — booking or customer does not exist",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      bookingNotFound: {
-                        summary: "Booking not found",
-                        value: { code: 404, error: "Not Found", message: "Booking 'booking999' does not exist." }
-                      }
-                    }
-                  }
-                }
-              },
-              "409": {
-                description: "Conflict — payment already exists for this booking",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      duplicate: {
-                        summary: "Duplicate payment",
-                        value: { code: 409, error: "Conflict", message: "A payment for booking 'booking101' has already been completed." }
-                      }
-                    }
-                  }
-                }
-              },
               "422": {
                 description: "Unprocessable Entity — payment declined by provider",
                 content: {
@@ -147,20 +105,6 @@ window.onload = function () {
                       cardDeclined: {
                         summary: "Card declined",
                         value: { code: 422, error: "Unprocessable Entity", message: "Payment declined: insufficient funds on the provided card." }
-                      }
-                    }
-                  }
-                }
-              },
-              "500": {
-                description: "Internal Server Error — payment gateway failure",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      gatewayError: {
-                        summary: "Gateway timeout",
-                        value: { code: 500, error: "Internal Server Error", message: "Payment gateway did not respond. Please retry after a few moments." }
                       }
                     }
                   }
@@ -185,7 +129,7 @@ window.onload = function () {
                     schema: { $ref: "#/components/schemas/PaymentResponse" },
                     examples: {
                       completed: {
-                        summary: "GET /payments/pay_abc123 — completed payment",
+                        summary: "Completed payment",
                         value: {
                           paymentId: "pay_abc123",
                           bookingId: "booking101",
@@ -198,7 +142,7 @@ window.onload = function () {
                         }
                       },
                       pending: {
-                        summary: "GET /payments/pay_def456 — pending payment",
+                        summary: "Pending payment",
                         value: {
                           paymentId: "pay_def456",
                           bookingId: "booking102",
@@ -228,20 +172,6 @@ window.onload = function () {
                   }
                 }
               },
-              "403": {
-                description: "Forbidden — caller is not authorized to view this payment",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      forbidden: {
-                        summary: "Access denied",
-                        value: { code: 403, error: "Forbidden", message: "You do not have permission to access payment 'pay_abc123'." }
-                      }
-                    }
-                  }
-                }
-              },
               "404": {
                 description: "Not Found — no payment found for the given ID",
                 content: {
@@ -251,20 +181,6 @@ window.onload = function () {
                       notFound: {
                         summary: "Payment not found",
                         value: { code: 404, error: "Not Found", message: "Payment 'pay_xyz999' does not exist." }
-                      }
-                    }
-                  }
-                }
-              },
-              "500": {
-                description: "Internal Server Error — unexpected server-side failure",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      serverError: {
-                        summary: "Unexpected error",
-                        value: { code: 500, error: "Internal Server Error", message: "An unexpected error occurred. Please contact support." }
                       }
                     }
                   }
@@ -343,38 +259,6 @@ window.onload = function () {
                       amountExceeds: {
                         summary: "Refund amount exceeds original payment",
                         value: { code: 400, error: "Bad Request", message: "Refund amount $400.00 exceeds the original payment amount of $350.00." }
-                      },
-                      missingReason: {
-                        summary: "Reason not provided",
-                        value: { code: 400, error: "Bad Request", message: "Field 'reason' is required to process a refund." }
-                      }
-                    }
-                  }
-                }
-              },
-              "401": {
-                description: "Unauthorized — authentication required",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      unauthorized: {
-                        summary: "Missing token",
-                        value: { code: 401, error: "Unauthorized", message: "Authentication token is missing or has expired." }
-                      }
-                    }
-                  }
-                }
-              },
-              "404": {
-                description: "Not Found — payment ID does not exist",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      notFound: {
-                        summary: "Payment not found",
-                        value: { code: 404, error: "Not Found", message: "Payment 'pay_abc123' was not found. Refund cannot be issued." }
                       }
                     }
                   }
@@ -389,34 +273,6 @@ window.onload = function () {
                       alreadyRefunded: {
                         summary: "Already refunded",
                         value: { code: 409, error: "Conflict", message: "Payment 'pay_abc123' has already been fully refunded." }
-                      }
-                    }
-                  }
-                }
-              },
-              "422": {
-                description: "Unprocessable Entity — refund window has expired",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      windowExpired: {
-                        summary: "Refund window expired",
-                        value: { code: 422, error: "Unprocessable Entity", message: "The refund eligibility window for this payment has expired." }
-                      }
-                    }
-                  }
-                }
-              },
-              "500": {
-                description: "Internal Server Error — refund processing failure",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      processingError: {
-                        summary: "Refund processor error",
-                        value: { code: 500, error: "Internal Server Error", message: "Refund could not be processed due to a payment provider error. Please try again." }
                       }
                     }
                   }
@@ -448,7 +304,7 @@ window.onload = function () {
                     schema: { $ref: "#/components/schemas/PayoutListResponse" },
                     examples: {
                       marchPayouts: {
-                        summary: "GET /hosts/host123/payouts?start=2026-03-01&end=2026-03-31",
+                        summary: "Payouts for March 2026",
                         value: {
                           hostId: "host123",
                           payouts: [
@@ -459,12 +315,8 @@ window.onload = function () {
                         }
                       },
                       noPayouts: {
-                        summary: "No payouts found for the given period",
-                        value: {
-                          hostId: "host123",
-                          payouts: [],
-                          totalPaid: 0.00
-                        }
+                        summary: "No payouts in period",
+                        value: { hostId: "host123", payouts: [], totalPaid: 0.00 }
                       }
                     }
                   }
@@ -479,38 +331,6 @@ window.onload = function () {
                       invalidDateRange: {
                         summary: "End date before start date",
                         value: { code: 400, error: "Bad Request", message: "'end' date must be after 'start' date." }
-                      },
-                      invalidStatus: {
-                        summary: "Invalid status filter",
-                        value: { code: 400, error: "Bad Request", message: "Status 'archived' is not valid. Accepted values: pending, processing, paid, failed." }
-                      }
-                    }
-                  }
-                }
-              },
-              "401": {
-                description: "Unauthorized — bearer token missing or expired",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      unauthorized: {
-                        summary: "Token expired",
-                        value: { code: 401, error: "Unauthorized", message: "Your session has expired. Please re-authenticate." }
-                      }
-                    }
-                  }
-                }
-              },
-              "403": {
-                description: "Forbidden — caller cannot access this host's payouts",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      forbidden: {
-                        summary: "Access denied",
-                        value: { code: 403, error: "Forbidden", message: "You are not authorized to view payouts for host 'host123'." }
                       }
                     }
                   }
@@ -525,20 +345,6 @@ window.onload = function () {
                       notFound: {
                         summary: "Host not found",
                         value: { code: 404, error: "Not Found", message: "Host 'host999' does not exist." }
-                      }
-                    }
-                  }
-                }
-              },
-              "500": {
-                description: "Internal Server Error — failed to retrieve payouts",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      serverError: {
-                        summary: "Database error",
-                        value: { code: 500, error: "Internal Server Error", message: "Failed to retrieve payouts. Please try again later." }
                       }
                     }
                   }
@@ -591,7 +397,7 @@ window.onload = function () {
                 }
               },
               "400": {
-                description: "Bad Request — invalid payout amount or missing bank account",
+                description: "Bad Request — invalid amount or missing bank account",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -608,48 +414,6 @@ window.onload = function () {
                   }
                 }
               },
-              "401": {
-                description: "Unauthorized — authentication required",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      unauthorized: {
-                        summary: "Missing or invalid token",
-                        value: { code: 401, error: "Unauthorized", message: "Authentication token is missing or has expired." }
-                      }
-                    }
-                  }
-                }
-              },
-              "403": {
-                description: "Forbidden — host account is suspended or ineligible",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      suspended: {
-                        summary: "Host account suspended",
-                        value: { code: 403, error: "Forbidden", message: "Payout requests are disabled for host 'host123' due to account suspension." }
-                      }
-                    }
-                  }
-                }
-              },
-              "404": {
-                description: "Not Found — host or bank account does not exist",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      bankNotFound: {
-                        summary: "Bank account not found",
-                        value: { code: 404, error: "Not Found", message: "Bank account 'bank_acc_999' is not linked to host 'host123'." }
-                      }
-                    }
-                  }
-                }
-              },
               "409": {
                 description: "Conflict — a payout request is already in progress",
                 content: {
@@ -659,20 +423,6 @@ window.onload = function () {
                       inProgress: {
                         summary: "Payout already processing",
                         value: { code: 409, error: "Conflict", message: "A payout request is already being processed for host 'host123'. Please wait until it completes." }
-                      }
-                    }
-                  }
-                }
-              },
-              "500": {
-                description: "Internal Server Error — payout initiation failed",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/ErrorResponse" },
-                    examples: {
-                      processingError: {
-                        summary: "Payout service error",
-                        value: { code: 500, error: "Internal Server Error", message: "Payout could not be initiated due to a service error. Please try again later." }
                       }
                     }
                   }
