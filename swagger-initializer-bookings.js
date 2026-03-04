@@ -62,13 +62,13 @@ window.onload = function () {
             },
             responses: {
               "201": {
-                description: "Booking created",
+                description: "Booking created successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/Booking" },
                     examples: {
                       pendingApproval: {
-                        summary: "Booking created — awaiting host approval",
+                        summary: "201 — booking created, awaiting host approval",
                         value: {
                           bookingId: "booking_101",
                           listingId: "listing_nyc_001",
@@ -87,7 +87,7 @@ window.onload = function () {
                         }
                       },
                       instantBooked: {
-                        summary: "Booking created — instant book confirmed",
+                        summary: "201 — instant book confirmed immediately",
                         value: {
                           bookingId: "booking_102",
                           listingId: "listing_la_007",
@@ -104,6 +104,52 @@ window.onload = function () {
                           createdAt: "2026-03-01T13:00:00Z",
                           updatedAt: "2026-03-01T13:00:00Z"
                         }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": {
+                description: "Bad request — missing or invalid fields",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      missingFields: {
+                        summary: "400 — required fields missing",
+                        value: { code: "MISSING_FIELDS", message: "Fields 'listingId', 'checkIn', and 'checkOut' are required." }
+                      },
+                      invalidDateRange: {
+                        summary: "400 — checkout is before check-in",
+                        value: { code: "INVALID_DATE_RANGE", message: "The 'checkOut' date must be after the 'checkIn' date." }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                description: "Unauthorised — missing or invalid bearer token",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      unauthorized: {
+                        summary: "401 — token missing or expired",
+                        value: { code: "UNAUTHORIZED", message: "Authentication token is missing or has expired." }
+                      }
+                    }
+                  }
+                }
+              },
+              "409": {
+                description: "Conflict — listing is not available for the requested dates",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      dateConflict: {
+                        summary: "409 — listing already booked for those dates",
+                        value: { code: "LISTING_UNAVAILABLE", message: "Listing listing_nyc_001 is not available from 2026-04-10 to 2026-04-14." }
                       }
                     }
                   }
@@ -126,13 +172,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Booking details",
+                description: "Booking details returned successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/Booking" },
                     examples: {
                       confirmed: {
-                        summary: "GET /bookings/booking_101 — confirmed booking",
+                        summary: "200 — confirmed upcoming booking",
                         value: {
                           bookingId: "booking_101",
                           listingId: "listing_nyc_001",
@@ -151,7 +197,7 @@ window.onload = function () {
                         }
                       },
                       checkedIn: {
-                        summary: "GET /bookings/booking_101 — guest has checked in",
+                        summary: "200 — guest currently checked in",
                         value: {
                           bookingId: "booking_101",
                           listingId: "listing_nyc_001",
@@ -173,6 +219,34 @@ window.onload = function () {
                   }
                 }
               },
+              "401": {
+                description: "Unauthorised — missing or invalid bearer token",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      unauthorized: {
+                        summary: "401 — token missing or expired",
+                        value: { code: "UNAUTHORIZED", message: "Authentication token is missing or has expired." }
+                      }
+                    }
+                  }
+                }
+              },
+              "403": {
+                description: "Forbidden — caller is not the guest or host of this booking",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      forbidden: {
+                        summary: "403 — user does not have access to this booking",
+                        value: { code: "ACCESS_DENIED", message: "You do not have permission to view booking booking_101." }
+                      }
+                    }
+                  }
+                }
+              },
               "404": {
                 description: "Booking not found",
                 content: {
@@ -180,8 +254,8 @@ window.onload = function () {
                     schema: { $ref: "#/components/schemas/ErrorResponse" },
                     examples: {
                       notFound: {
-                        summary: "Booking ID does not exist",
-                        value: { code: "BOOKING_NOT_FOUND", message: "No booking found with ID booking_999" }
+                        summary: "404 — booking ID does not exist",
+                        value: { code: "BOOKING_NOT_FOUND", message: "No booking found with ID booking_999." }
                       }
                     }
                   }
@@ -205,13 +279,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Booking status with timeline",
+                description: "Booking status with full timeline returned",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/BookingStatusResponse" },
                     examples: {
                       confirmedStatus: {
-                        summary: "GET /bookings/booking_101/status — confirmed, upcoming stay",
+                        summary: "200 — confirmed, upcoming stay",
                         value: {
                           bookingId: "booking_101",
                           currentStatus: "confirmed",
@@ -224,7 +298,7 @@ window.onload = function () {
                         }
                       },
                       activeStay: {
-                        summary: "GET /bookings/booking_101/status — guest currently staying",
+                        summary: "200 — guest currently staying",
                         value: {
                           bookingId: "booking_101",
                           currentStatus: "checked_in",
@@ -238,7 +312,7 @@ window.onload = function () {
                         }
                       },
                       completed: {
-                        summary: "GET /bookings/booking_101/status — stay completed",
+                        summary: "200 — stay fully completed",
                         value: {
                           bookingId: "booking_101",
                           currentStatus: "completed",
@@ -252,6 +326,34 @@ window.onload = function () {
                           nextExpectedStatus: null,
                           nextActionDue: null
                         }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                description: "Unauthorised — missing or invalid bearer token",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      unauthorized: {
+                        summary: "401 — token missing or expired",
+                        value: { code: "UNAUTHORIZED", message: "Authentication token is missing or has expired." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Booking not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      notFound: {
+                        summary: "404 — booking ID does not exist",
+                        value: { code: "BOOKING_NOT_FOUND", message: "No booking found with ID booking_999." }
                       }
                     }
                   }
@@ -273,23 +375,23 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/BookingStatusUpdateRequest" },
                   examples: {
                     hostApproves: {
-                      summary: "PUT /bookings/booking_101/status — host approves",
+                      summary: "PUT — host approves booking",
                       value: { status: "confirmed", note: "Welcome! Looking forward to hosting you." }
                     },
                     hostDeclines: {
-                      summary: "PUT /bookings/booking_101/status — host declines",
+                      summary: "PUT — host declines booking",
                       value: { status: "declined", note: "Property unavailable due to unexpected maintenance." }
                     },
                     guestCancels: {
-                      summary: "PUT /bookings/booking_101/status — guest cancels",
+                      summary: "PUT — guest cancels booking",
                       value: { status: "cancelled_by_guest", note: "Travel plans changed." }
                     },
                     checkIn: {
-                      summary: "PUT /bookings/booking_101/status — guest checks in",
+                      summary: "PUT — guest checks in",
                       value: { status: "checked_in", note: "Guest checked in via smart lock code" }
                     },
                     checkOut: {
-                      summary: "PUT /bookings/booking_101/status — guest checks out",
+                      summary: "PUT — guest checks out",
                       value: { status: "checked_out", note: "Guest checked out on time" }
                     }
                   }
@@ -298,13 +400,13 @@ window.onload = function () {
             },
             responses: {
               "200": {
-                description: "Status updated",
+                description: "Status updated successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/BookingStatusResponse" },
                     examples: {
                       nowConfirmed: {
-                        summary: "Status updated to confirmed",
+                        summary: "200 — status updated to confirmed",
                         value: {
                           bookingId: "booking_101",
                           currentStatus: "confirmed",
@@ -320,15 +422,61 @@ window.onload = function () {
                   }
                 }
               },
+              "401": {
+                description: "Unauthorised — missing or invalid bearer token",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      unauthorized: {
+                        summary: "401 — token missing or expired",
+                        value: { code: "UNAUTHORIZED", message: "Authentication token is missing or has expired." }
+                      }
+                    }
+                  }
+                }
+              },
+              "403": {
+                description: "Forbidden — caller is not authorised to perform this status update",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      forbidden: {
+                        summary: "403 — guest attempting to approve their own booking",
+                        value: { code: "ACCESS_DENIED", message: "Only the host can approve or decline a booking request." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Booking not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      notFound: {
+                        summary: "404 — booking ID does not exist",
+                        value: { code: "BOOKING_NOT_FOUND", message: "No booking found with ID booking_999." }
+                      }
+                    }
+                  }
+                }
+              },
               "422": {
-                description: "Invalid status transition",
+                description: "Unprocessable — invalid status transition",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/ErrorResponse" },
                     examples: {
                       invalidTransition: {
-                        summary: "Cannot move from completed to checked_in",
+                        summary: "422 — cannot move from completed to checked_in",
                         value: { code: "INVALID_STATUS_TRANSITION", message: "Cannot transition from 'completed' to 'checked_in'." }
+                      },
+                      alreadyCancelled: {
+                        summary: "422 — booking is already cancelled",
+                        value: { code: "BOOKING_ALREADY_CANCELLED", message: "Booking booking_101 has already been cancelled and cannot be updated." }
                       }
                     }
                   }
@@ -361,13 +509,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Guest booking history",
+                description: "Guest booking history returned successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/BookingListResponse" },
                     examples: {
                       allBookings: {
-                        summary: "GET /guests/cust001/bookings — full history",
+                        summary: "200 — full booking history",
                         value: {
                           guestId: "cust001",
                           bookings: [
@@ -381,7 +529,7 @@ window.onload = function () {
                         }
                       },
                       upcomingOnly: {
-                        summary: "GET /guests/cust001/bookings?status=confirmed — upcoming trips",
+                        summary: "200 — filtered to confirmed/upcoming trips only",
                         value: {
                           guestId: "cust001",
                           bookings: [
@@ -391,6 +539,58 @@ window.onload = function () {
                           page: 1,
                           limit: 10
                         }
+                      },
+                      noBookings: {
+                        summary: "200 — guest has no bookings yet",
+                        value: {
+                          guestId: "cust099",
+                          bookings: [],
+                          totalCount: 0,
+                          page: 1,
+                          limit: 10
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": {
+                description: "Bad request — invalid query parameters",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      invalidStatus: {
+                        summary: "400 — unrecognised status filter value",
+                        value: { code: "INVALID_STATUS", message: "'unknown_status' is not a valid booking status filter." }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                description: "Unauthorised — missing or invalid bearer token",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      unauthorized: {
+                        summary: "401 — token missing or expired",
+                        value: { code: "UNAUTHORIZED", message: "Authentication token is missing or has expired." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Guest not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      guestNotFound: {
+                        summary: "404 — guest ID does not exist",
+                        value: { code: "GUEST_NOT_FOUND", message: "No guest account found with ID cust999." }
                       }
                     }
                   }
@@ -423,13 +623,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Host booking list",
+                description: "Host booking list returned successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/BookingListResponse" },
                     examples: {
                       pendingRequests: {
-                        summary: "GET /hosts/host123/bookings?status=pending_approval",
+                        summary: "200 — filtered to pending approval requests",
                         value: {
                           hostId: "host123",
                           bookings: [
@@ -441,7 +641,7 @@ window.onload = function () {
                         }
                       },
                       allBookings: {
-                        summary: "GET /hosts/host123/bookings — full history",
+                        summary: "200 — full booking history across all listings",
                         value: {
                           hostId: "host123",
                           bookings: [
@@ -453,6 +653,58 @@ window.onload = function () {
                           page: 1,
                           limit: 10
                         }
+                      },
+                      noBookings: {
+                        summary: "200 — no bookings found for the applied filters",
+                        value: {
+                          hostId: "host123",
+                          bookings: [],
+                          totalCount: 0,
+                          page: 1,
+                          limit: 10
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": {
+                description: "Bad request — invalid query parameters",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      invalidDateRange: {
+                        summary: "400 — end date is before start date",
+                        value: { code: "INVALID_DATE_RANGE", message: "The 'end' date must be after the 'start' date." }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                description: "Unauthorised — missing or invalid bearer token",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      unauthorized: {
+                        summary: "401 — token missing or expired",
+                        value: { code: "UNAUTHORIZED", message: "Authentication token is missing or has expired." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Host not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      hostNotFound: {
+                        summary: "404 — host ID does not exist",
+                        value: { code: "HOST_NOT_FOUND", message: "No host account found with ID host999." }
                       }
                     }
                   }
@@ -481,7 +733,7 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/BookingModifyRequest" },
                   examples: {
                     extendDates: {
-                      summary: "PUT /bookings/booking_101/modify — extend stay by 1 night",
+                      summary: "PUT — extend stay by 1 night",
                       value: {
                         requestedBy: "guest",
                         checkIn: "2026-04-10",
@@ -491,7 +743,7 @@ window.onload = function () {
                       }
                     },
                     reduceDates: {
-                      summary: "PUT /bookings/booking_101/modify — shorten stay",
+                      summary: "PUT — shorten stay by 1 night",
                       value: {
                         requestedBy: "guest",
                         checkIn: "2026-04-11",
@@ -501,7 +753,7 @@ window.onload = function () {
                       }
                     },
                     updateGuests: {
-                      summary: "PUT /bookings/booking_101/modify — update guest count",
+                      summary: "PUT — update guest count",
                       value: {
                         requestedBy: "guest",
                         guests: { adults: 3, children: 1, infants: 0 },
@@ -515,13 +767,13 @@ window.onload = function () {
             },
             responses: {
               "200": {
-                description: "Modification request submitted",
+                description: "Modification request submitted and pending approval",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/BookingModifyResponse" },
                     examples: {
                       modificationPending: {
-                        summary: "Modification awaiting host approval",
+                        summary: "200 — modification awaiting host approval",
                         value: {
                           bookingId: "booking_101",
                           modificationId: "mod_001",
@@ -531,6 +783,70 @@ window.onload = function () {
                           reason: "We'd like to extend our stay by one more night",
                           requestedAt: "2026-03-10T08:00:00Z"
                         }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": {
+                description: "Bad request — invalid modification fields",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      noChanges: {
+                        summary: "400 — no changes provided in request body",
+                        value: { code: "NO_CHANGES_REQUESTED", message: "The modification request must include at least one change — dates, guests, or price." }
+                      },
+                      invalidDates: {
+                        summary: "400 — new checkout is before new check-in",
+                        value: { code: "INVALID_DATE_RANGE", message: "The modified 'checkOut' must be after 'checkIn'." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Booking not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      notFound: {
+                        summary: "404 — booking ID does not exist",
+                        value: { code: "BOOKING_NOT_FOUND", message: "No booking found with ID booking_999." }
+                      }
+                    }
+                  }
+                }
+              },
+              "409": {
+                description: "Conflict — new dates overlap with another confirmed booking",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      dateConflict: {
+                        summary: "409 — extended dates clash with an existing booking",
+                        value: { code: "DATE_CONFLICT", message: "The requested new dates overlap with an existing confirmed booking for this listing." }
+                      }
+                    }
+                  }
+                }
+              },
+              "422": {
+                description: "Unprocessable — modification not permitted in current booking state",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      alreadyCheckedIn: {
+                        summary: "422 — cannot modify dates after guest has checked in",
+                        value: { code: "MODIFICATION_NOT_ALLOWED", message: "Date modifications are not permitted after the guest has already checked in." }
+                      },
+                      bookingCancelled: {
+                        summary: "422 — booking is already cancelled",
+                        value: { code: "BOOKING_CANCELLED", message: "Booking booking_101 has been cancelled and cannot be modified." }
                       }
                     }
                   }
@@ -559,11 +875,11 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/CancellationRequest" },
                   examples: {
                     guestCancels: {
-                      summary: "POST /bookings/booking_101/cancel — guest cancels (free window)",
+                      summary: "POST — guest cancels within free window",
                       value: { cancelledBy: "guest", reason: "Change of plans", refundRequested: true }
                     },
                     hostCancels: {
-                      summary: "POST /bookings/booking_101/cancel — host cancels",
+                      summary: "POST — host cancels due to property issue",
                       value: { cancelledBy: "host", reason: "Unexpected property damage requiring repairs", refundRequested: false }
                     }
                   }
@@ -572,13 +888,13 @@ window.onload = function () {
             },
             responses: {
               "200": {
-                description: "Booking cancelled",
+                description: "Booking cancelled successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/CancellationResponse" },
                     examples: {
                       fullRefund: {
-                        summary: "Cancelled with full refund (within free window)",
+                        summary: "200 — guest cancelled within free window, full refund issued",
                         value: {
                           bookingId: "booking_101",
                           status: "cancelled_by_guest",
@@ -590,7 +906,7 @@ window.onload = function () {
                         }
                       },
                       hostCancels: {
-                        summary: "Host cancelled — guest gets full refund automatically",
+                        summary: "200 — host cancelled, guest automatically refunded in full",
                         value: {
                           bookingId: "booking_101",
                           status: "cancelled_by_host",
@@ -600,6 +916,64 @@ window.onload = function () {
                           refundStatus: "pending",
                           cancelledAt: "2026-03-16T07:00:00Z"
                         }
+                      },
+                      noRefund: {
+                        summary: "200 — guest cancelled outside refund window, no refund applicable",
+                        value: {
+                          bookingId: "booking_101",
+                          status: "cancelled_by_guest",
+                          cancelledBy: "guest",
+                          reason: "Change of plans",
+                          refundAmount: 0.00,
+                          refundStatus: "not_applicable",
+                          cancelledAt: "2026-04-08T14:00:00Z"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                description: "Unauthorised — missing or invalid bearer token",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      unauthorized: {
+                        summary: "401 — token missing or expired",
+                        value: { code: "UNAUTHORIZED", message: "Authentication token is missing or has expired." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Booking not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      notFound: {
+                        summary: "404 — booking ID does not exist",
+                        value: { code: "BOOKING_NOT_FOUND", message: "No booking found with ID booking_999." }
+                      }
+                    }
+                  }
+                }
+              },
+              "422": {
+                description: "Unprocessable — booking cannot be cancelled in its current state",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      alreadyCancelled: {
+                        summary: "422 — booking is already cancelled",
+                        value: { code: "ALREADY_CANCELLED", message: "Booking booking_101 has already been cancelled." }
+                      },
+                      alreadyCompleted: {
+                        summary: "422 — stay is already completed, cannot cancel",
+                        value: { code: "BOOKING_COMPLETED", message: "Booking booking_101 has already been completed and cannot be cancelled." }
                       }
                     }
                   }
