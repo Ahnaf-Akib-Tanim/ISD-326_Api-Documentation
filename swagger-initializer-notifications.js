@@ -103,7 +103,7 @@ window.onload = function () {
                     schema: { $ref: "#/components/schemas/NotificationDispatchResponse" },
                     examples: {
                       emailSent: {
-                        summary: "Email notification queued",
+                        summary: "201 — email notification queued",
                         value: {
                           notificationId: "notif_e001",
                           userId: "cust001",
@@ -114,7 +114,7 @@ window.onload = function () {
                         }
                       },
                       bothSent: {
-                        summary: "Email + push both queued",
+                        summary: "201 — email + push both queued",
                         value: {
                           notificationId: "notif_e002",
                           userId: "cust001",
@@ -123,6 +123,38 @@ window.onload = function () {
                           status: "queued",
                           createdAt: "2026-03-01T12:06:00Z"
                         }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": {
+                description: "Bad request — missing or invalid fields",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      missingRecipientEmail: {
+                        summary: "400 — email missing for email/both channel",
+                        value: { code: "MISSING_RECIPIENT_FIELD", message: "Field 'recipient.email' is required when channel is 'email' or 'both'." }
+                      },
+                      invalidType: {
+                        summary: "400 — unrecognised notification type",
+                        value: { code: "INVALID_NOTIFICATION_TYPE", message: "'booking_maybe' is not a supported notification type." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "User not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      userNotFound: {
+                        summary: "404 — userId does not exist",
+                        value: { code: "USER_NOT_FOUND", message: "No user found with ID cust999." }
                       }
                     }
                   }
@@ -165,13 +197,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Notification history",
+                description: "Notification history returned successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/NotificationHistoryResponse" },
                     examples: {
                       guestInbox: {
-                        summary: "GET /users/cust001/notifications — guest inbox",
+                        summary: "200 — guest inbox with mixed notification types",
                         value: {
                           userId: "cust001",
                           notifications: [
@@ -211,6 +243,45 @@ window.onload = function () {
                           page: 1,
                           limit: 20
                         }
+                      },
+                      emptyInbox: {
+                        summary: "200 — user has no notifications yet",
+                        value: {
+                          userId: "cust099",
+                          notifications: [],
+                          totalCount: 0,
+                          unreadCount: 0,
+                          page: 1,
+                          limit: 20
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": {
+                description: "Bad request — invalid query parameter value",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      invalidStatus: {
+                        summary: "400 — unrecognised status filter",
+                        value: { code: "INVALID_STATUS_FILTER", message: "'sent_maybe' is not a valid notification status." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "User not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      userNotFound: {
+                        summary: "404 — userId does not exist",
+                        value: { code: "USER_NOT_FOUND", message: "No user found with ID cust999." }
                       }
                     }
                   }
@@ -234,13 +305,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Notification detail",
+                description: "Notification detail returned successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/NotificationDetail" },
                     examples: {
                       emailDetail: {
-                        summary: "GET /users/cust001/notifications/notif_e001",
+                        summary: "200 — delivered email notification",
                         value: {
                           notificationId: "notif_e001",
                           userId: "cust001",
@@ -254,6 +325,36 @@ window.onload = function () {
                           deliveredAt: "2026-03-01T12:05:18Z",
                           recipient: { name: "Alice Johnson", email: "alice@example.com" }
                         }
+                      },
+                      failedPush: {
+                        summary: "200 — failed push notification (bad device token)",
+                        value: {
+                          notificationId: "notif_p002",
+                          userId: "cust001",
+                          channel: "push",
+                          type: "checkin_reminder",
+                          subject: "Your check-in is tomorrow!",
+                          body: "Hi Alice, your check-in at Cozy Manhattan Loft is tomorrow at 3:00 PM.",
+                          status: "failed",
+                          readAt: null,
+                          createdAt: "2026-04-09T08:00:00Z",
+                          deliveredAt: null,
+                          recipient: { name: "Alice Johnson", email: "alice@example.com" }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "403": {
+                description: "Forbidden — notification does not belong to this user",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      forbidden: {
+                        summary: "403 — notification belongs to a different user",
+                        value: { code: "ACCESS_DENIED", message: "Notification notif_e001 does not belong to user cust002." }
                       }
                     }
                   }
@@ -266,8 +367,8 @@ window.onload = function () {
                     schema: { $ref: "#/components/schemas/ErrorResponse" },
                     examples: {
                       notFound: {
-                        summary: "Notification ID does not exist",
-                        value: { code: "NOTIFICATION_NOT_FOUND", message: "No notification found with ID notif_e999 for user cust001" }
+                        summary: "404 — notification ID does not exist",
+                        value: { code: "NOTIFICATION_NOT_FOUND", message: "No notification found with ID notif_e999 for user cust001." }
                       }
                     }
                   }
@@ -298,13 +399,50 @@ window.onload = function () {
                     schema: { $ref: "#/components/schemas/NotificationReadResponse" },
                     examples: {
                       markedRead: {
-                        summary: "PUT /users/cust001/notifications/notif_e001/read",
+                        summary: "200 — notification marked as read",
                         value: {
                           notificationId: "notif_e001",
                           userId: "cust001",
                           status: "read",
                           readAt: "2026-03-02T09:15:00Z"
                         }
+                      },
+                      alreadyRead: {
+                        summary: "200 — already read (idempotent, no change)",
+                        value: {
+                          notificationId: "notif_e001",
+                          userId: "cust001",
+                          status: "read",
+                          readAt: "2026-03-01T14:00:00Z"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Notification not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      notFound: {
+                        summary: "404 — notification ID does not exist for this user",
+                        value: { code: "NOTIFICATION_NOT_FOUND", message: "No notification found with ID notif_e999 for user cust001." }
+                      }
+                    }
+                  }
+                }
+              },
+              "422": {
+                description: "Unprocessable — notification has not been delivered yet",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      notDelivered: {
+                        summary: "422 — cannot mark an undelivered notification as read",
+                        value: { code: "NOT_DELIVERED", message: "Notification notif_e003 has not been delivered yet and cannot be marked as read." }
                       }
                     }
                   }
@@ -315,11 +453,7 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // 5. NOTIFICATION DELIVERY STATUS
-        // ────────────────────────────────────────
-
-        // ─────────────────────────────────────────
-        // 6 & 7. NOTIFICATION PREFERENCES
+        // 5 & 6. NOTIFICATION PREFERENCES
         // ─────────────────────────────────────────
 
         "/users/{userId}/notification-preferences": {
@@ -332,13 +466,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "User notification preferences",
+                description: "User notification preferences returned successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/NotificationPreferences" },
                     examples: {
                       prefs: {
-                        summary: "GET /users/cust001/notification-preferences",
+                        summary: "200 — full preference list for user",
                         value: {
                           userId: "cust001",
                           preferences: [
@@ -353,6 +487,34 @@ window.onload = function () {
                             { type: "review_request", email: true, push: false }
                           ]
                         }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                description: "Unauthorised — missing or invalid bearer token",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      unauthorized: {
+                        summary: "401 — token missing or expired",
+                        value: { code: "UNAUTHORIZED", message: "Authentication token is missing or has expired." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "User not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      userNotFound: {
+                        summary: "404 — userId does not exist",
+                        value: { code: "USER_NOT_FOUND", message: "No user found with ID cust999." }
                       }
                     }
                   }
@@ -406,13 +568,13 @@ window.onload = function () {
             },
             responses: {
               "200": {
-                description: "Preferences updated",
+                description: "Preferences updated successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/NotificationPreferences" },
                     examples: {
                       updated: {
-                        summary: "Updated preferences saved",
+                        summary: "200 — updated preferences saved and returned",
                         value: {
                           userId: "cust001",
                           preferences: [
@@ -427,14 +589,42 @@ window.onload = function () {
                     }
                   }
                 }
+              },
+              "400": {
+                description: "Bad request — invalid preference values",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      invalidType: {
+                        summary: "400 — unrecognised notification type in preferences",
+                        value: { code: "INVALID_NOTIFICATION_TYPE", message: "'booking_maybe' is not a supported notification type." }
+                      },
+                      emptyPreferences: {
+                        summary: "400 — preferences array must not be empty",
+                        value: { code: "EMPTY_PREFERENCES", message: "The 'preferences' array must contain at least one entry." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "User not found",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      userNotFound: {
+                        summary: "404 — userId does not exist",
+                        value: { code: "USER_NOT_FOUND", message: "No user found with ID cust999." }
+                      }
+                    }
+                  }
+                }
               }
             }
           }
-        },
-
-        // ─────────────────────────────────────────
-        // 8. REGISTER DEVICE TOKEN (PUSH)
-        // ─────────────────────────────────────────
+        }
       },
 
       components: {
