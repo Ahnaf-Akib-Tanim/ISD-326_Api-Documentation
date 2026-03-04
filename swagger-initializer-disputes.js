@@ -15,7 +15,7 @@ window.onload = function () {
       paths: {
 
         // ─────────────────────────────────────────
-        // 1 & 2. RAISE A DISPUTE / LIST ALL DISPUTES
+        // RAISE A DISPUTE
         // ─────────────────────────────────────────
 
         "/disputes": {
@@ -30,7 +30,7 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/DisputeCreateRequest" },
                   examples: {
                     guestRaisesRefundDispute: {
-                      summary: "POST /disputes — guest disputes a denied refund",
+                      summary: "Guest disputes a denied refund",
                       value: {
                         bookingId: "booking_101",
                         raisedBy: "cust001",
@@ -39,13 +39,13 @@ window.onload = function () {
                         againstUserRole: "host",
                         category: "refund_dispute",
                         subject: "Host refused refund after cancelling booking",
-                        description: "The host cancelled my booking 2 days before check-in due to a claimed emergency, but then declined my refund request saying the cancellation policy did not apply. I paid $520 and have received nothing back. The platform's policy clearly states guests receive a full refund when the host cancels.",
+                        description: "The host cancelled my booking 2 days before check-in due to a claimed emergency, but then declined my refund request saying the cancellation policy did not apply. I paid $520 and have received nothing back.",
                         claimedAmount: 520.00,
                         currency: "USD"
                       }
                     },
                     hostRaisesPropertyDamageDispute: {
-                      summary: "POST /disputes — host claims property damage by guest",
+                      summary: "Host claims property damage by guest",
                       value: {
                         bookingId: "booking_098",
                         raisedBy: "host123",
@@ -54,13 +54,13 @@ window.onload = function () {
                         againstUserRole: "guest",
                         category: "property_damage",
                         subject: "Significant damage to apartment furniture after guest stay",
-                        description: "After the guest's 3-night stay, I discovered a broken sofa leg, a large stain on the carpet, and a cracked mirror in the bathroom. The estimated repair and replacement cost is $380. The guest is refusing to acknowledge the damage or pay for repairs.",
+                        description: "After the guest's 3-night stay, I discovered a broken sofa leg, a large stain on the carpet, and a cracked mirror in the bathroom. Estimated repair cost is $380.",
                         claimedAmount: 380.00,
                         currency: "USD"
                       }
                     },
                     guestRaisesMisrepresentation: {
-                      summary: "POST /disputes — guest claims listing was misrepresented",
+                      summary: "Guest claims listing was misrepresented",
                       value: {
                         bookingId: "booking_103",
                         raisedBy: "cust005",
@@ -69,7 +69,7 @@ window.onload = function () {
                         againstUserRole: "host",
                         category: "listing_misrepresentation",
                         subject: "Listing photos and description did not match actual property",
-                        description: "The listing showed a private apartment but on arrival it was a shared room in a shared flat with strangers. The amenities listed including a pool and gym were not available. I had no choice but to book alternative accommodation and I am requesting a full refund of $280.",
+                        description: "The listing showed a private apartment but on arrival it was a shared room. The amenities including pool and gym were not available. I had to book alternative accommodation and request a full refund of $280.",
                         claimedAmount: 280.00,
                         currency: "USD"
                       }
@@ -111,93 +111,29 @@ window.onload = function () {
                   }
                 }
               },
+              "400": {
+                description: "Bad Request — missing required fields or invalid category",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      missingField: {
+                        summary: "Missing description",
+                        value: { code: "MISSING_FIELD", message: "Field 'description' is required to raise a dispute." }
+                      }
+                    }
+                  }
+                }
+              },
               "409": {
-                description: "Dispute already exists for this booking",
+                description: "Conflict — a dispute already exists for this booking",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/ErrorResponse" },
                     examples: {
                       alreadyExists: {
                         summary: "Duplicate dispute attempt",
-                        value: { code: "DISPUTE_ALREADY_EXISTS", message: "An open dispute already exists for booking booking_101. Dispute ID: disp_001" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-
-          get: {
-            tags: ["Disputes"],
-            summary: "List all disputes (admin only)",
-            description: "Returns a paginated list of all disputes on the platform. Admin-only endpoint. Supports filtering by status, category, priority, and date range.",
-            parameters: [
-              {
-                name: "status", in: "query", required: false,
-                schema: { type: "string", enum: ["open", "under_review", "awaiting_evidence", "resolved", "closed", "escalated"] },
-                example: "open"
-              },
-              {
-                name: "category", in: "query", required: false,
-                schema: { type: "string", enum: ["refund_dispute", "property_damage", "listing_misrepresentation", "cancellation_dispute", "harassment", "payment_issue", "other"] },
-                example: "refund_dispute"
-              },
-              {
-                name: "priority", in: "query", required: false,
-                schema: { type: "string", enum: ["low", "normal", "high", "urgent"] },
-                example: "high"
-              },
-              { name: "assignedAdminId", in: "query", required: false, schema: { type: "string" }, example: "admin_007" },
-              { name: "start", in: "query", required: false, schema: { type: "string", format: "date" }, example: "2026-03-01" },
-              { name: "end", in: "query", required: false, schema: { type: "string", format: "date" }, example: "2026-03-31" },
-              { name: "page", in: "query", required: false, schema: { type: "integer", default: 1 }, example: 1 },
-              { name: "limit", in: "query", required: false, schema: { type: "integer", default: 20 }, example: 20 }
-            ],
-            responses: {
-              "200": {
-                description: "List of disputes",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/DisputeListResponse" },
-                    examples: {
-                      openDisputes: {
-                        summary: "GET /disputes?status=open&priority=high",
-                        value: {
-                          totalCount: 3,
-                          page: 1,
-                          limit: 20,
-                          disputes: [
-                            {
-                              disputeId: "disp_001",
-                              bookingId: "booking_101",
-                              raisedByRole: "guest",
-                              againstUserRole: "host",
-                              category: "refund_dispute",
-                              subject: "Host refused refund after cancelling booking",
-                              claimedAmount: 520.00,
-                              currency: "USD",
-                              status: "open",
-                              priority: "high",
-                              assignedAdminId: null,
-                              createdAt: "2026-03-05T09:00:00Z"
-                            },
-                            {
-                              disputeId: "disp_003",
-                              bookingId: "booking_103",
-                              raisedByRole: "guest",
-                              againstUserRole: "host",
-                              category: "listing_misrepresentation",
-                              subject: "Listing photos and description did not match actual property",
-                              claimedAmount: 280.00,
-                              currency: "USD",
-                              status: "open",
-                              priority: "high",
-                              assignedAdminId: null,
-                              createdAt: "2026-03-06T11:00:00Z"
-                            }
-                          ]
-                        }
+                        value: { code: "DISPUTE_ALREADY_EXISTS", message: "An open dispute already exists for booking 'booking_101'. Dispute ID: disp_001." }
                       }
                     }
                   }
@@ -208,7 +144,7 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // 3. DISPUTE DETAIL
+        // DISPUTE DETAIL
         // ─────────────────────────────────────────
 
         "/disputes/{disputeId}": {
@@ -221,13 +157,13 @@ window.onload = function () {
             ],
             responses: {
               "200": {
-                description: "Dispute details",
+                description: "Dispute details retrieved successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/DisputeDetail" },
                     examples: {
                       underReview: {
-                        summary: "GET /disputes/disp_001 — dispute under admin review",
+                        summary: "Dispute under admin review with evidence",
                         value: {
                           disputeId: "disp_001",
                           bookingId: "booking_101",
@@ -237,39 +173,86 @@ window.onload = function () {
                           againstUserRole: "host",
                           category: "refund_dispute",
                           subject: "Host refused refund after cancelling booking",
-                          description: "The host cancelled my booking 2 days before check-in but declined my refund request saying cancellation policy did not apply.",
+                          description: "The host cancelled my booking 2 days before check-in but declined my refund request.",
                           claimedAmount: 520.00,
                           currency: "USD",
                           status: "under_review",
                           priority: "high",
                           assignedAdminId: "admin_007",
-                          adminNotes: "Booking cancellation confirmed on system. Host initiated cancel 48h before check-in. Platform policy mandates full guest refund. Awaiting host response to evidence request.",
+                          adminNotes: "Booking cancellation confirmed on system. Platform policy mandates full guest refund. Awaiting host response.",
                           evidence: [
-                            { evidenceId: "evid_001", submittedBy: "cust001", role: "guest", type: "screenshot", description: "Screenshot of host cancellation notification", fileUrl: "https://cdn.example.com/disputes/disp_001/evid_001.png", submittedAt: "2026-03-05T09:30:00Z" },
-                            { evidenceId: "evid_002", submittedBy: "cust001", role: "guest", type: "screenshot", description: "Screenshot of refund request being declined by host", fileUrl: "https://cdn.example.com/disputes/disp_001/evid_002.png", submittedAt: "2026-03-05T09:31:00Z" }
+                            { evidenceId: "evid_001", submittedBy: "cust001", role: "guest", type: "screenshot", description: "Screenshot of host cancellation notification", fileUrl: "https://cdn.example.com/disputes/disp_001/evid_001.png", submittedAt: "2026-03-05T09:30:00Z" }
                           ],
                           messages: [
                             { messageId: "msg_001", sentBy: "cust001", role: "guest", message: "I have submitted my screenshots. Please review as soon as possible.", sentAt: "2026-03-05T09:35:00Z" },
-                            { messageId: "msg_002", sentBy: "admin_007", role: "admin", message: "Thank you for submitting your evidence. We have reviewed the cancellation record on our system and have reached out to the host to provide their response. We aim to resolve this within 5 business days.", sentAt: "2026-03-06T10:00:00Z" }
+                            { messageId: "msg_002", sentBy: "admin_007", role: "admin", message: "Thank you for submitting your evidence. We have reached out to the host and aim to resolve this within 5 business days.", sentAt: "2026-03-06T10:00:00Z" }
                           ],
                           resolution: null,
                           createdAt: "2026-03-05T09:00:00Z",
                           updatedAt: "2026-03-06T10:00:00Z"
+                        }
+                      },
+                      resolved: {
+                        summary: "Dispute already resolved in guest's favour",
+                        value: {
+                          disputeId: "disp_002",
+                          bookingId: "booking_098",
+                          raisedBy: "cust001",
+                          raisedByRole: "guest",
+                          againstUserId: "host123",
+                          againstUserRole: "host",
+                          category: "refund_dispute",
+                          subject: "Host refused refund after cancelling booking",
+                          status: "resolved",
+                          priority: "high",
+                          assignedAdminId: "admin_007",
+                          adminNotes: "Resolved. Full refund issued.",
+                          evidence: [],
+                          messages: [],
+                          resolution: {
+                            disputeId: "disp_002",
+                            resolvedBy: "admin_007",
+                            decisionFavours: "guest",
+                            outcome: "full_refund",
+                            refundAmount: 520.00,
+                            currency: "USD",
+                            penaltyIssuedTo: null,
+                            penaltyAmount: null,
+                            explanation: "Host cancelled 48 hours before check-in. Full refund of $520.00 issued under Host Cancellation Policy.",
+                            status: "resolved",
+                            resolvedAt: "2026-03-08T09:00:00Z"
+                          },
+                          createdAt: "2026-03-05T09:00:00Z",
+                          updatedAt: "2026-03-08T09:00:00Z"
                         }
                       }
                     }
                   }
                 }
               },
+              "403": {
+                description: "Forbidden — caller is not a party to this dispute",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      forbidden: {
+                        summary: "Access denied",
+                        value: { code: "FORBIDDEN", message: "You do not have permission to view dispute 'disp_001'." }
+                      }
+                    }
+                  }
+                }
+              },
               "404": {
-                description: "Dispute not found",
+                description: "Not Found — dispute does not exist",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/ErrorResponse" },
                     examples: {
                       notFound: {
-                        summary: "Dispute does not exist",
-                        value: { code: "DISPUTE_NOT_FOUND", message: "No dispute found with ID disp_999" }
+                        summary: "Dispute not found",
+                        value: { code: "DISPUTE_NOT_FOUND", message: "No dispute found with ID 'disp_999'." }
                       }
                     }
                   }
@@ -280,7 +263,7 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // 4. EVIDENCE SUBMISSION
+        // EVIDENCE SUBMISSION
         // ─────────────────────────────────────────
 
         "/disputes/{disputeId}/evidence": {
@@ -298,7 +281,7 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/EvidenceSubmitRequest" },
                   examples: {
                     guestScreenshot: {
-                      summary: "POST /disputes/disp_001/evidence — guest submits screenshot",
+                      summary: "Guest submits cancellation screenshot",
                       value: {
                         submittedBy: "cust001",
                         role: "guest",
@@ -308,7 +291,7 @@ window.onload = function () {
                       }
                     },
                     hostDamagePhoto: {
-                      summary: "POST /disputes/disp_002/evidence — host submits damage photos",
+                      summary: "Host submits damage photos",
                       value: {
                         submittedBy: "host123",
                         role: "host",
@@ -318,7 +301,7 @@ window.onload = function () {
                       }
                     },
                     guestReceipt: {
-                      summary: "POST /disputes/disp_001/evidence — guest submits payment receipt",
+                      summary: "Guest submits payment receipt",
                       value: {
                         submittedBy: "cust001",
                         role: "guest",
@@ -333,13 +316,13 @@ window.onload = function () {
             },
             responses: {
               "201": {
-                description: "Evidence submitted",
+                description: "Evidence submitted and attached to dispute",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/Evidence" },
                     examples: {
                       submitted: {
-                        summary: "Evidence accepted and attached to dispute",
+                        summary: "Evidence accepted",
                         value: {
                           evidenceId: "evid_003",
                           disputeId: "disp_001",
@@ -355,15 +338,29 @@ window.onload = function () {
                   }
                 }
               },
+              "404": {
+                description: "Not Found — dispute does not exist",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      notFound: {
+                        summary: "Dispute not found",
+                        value: { code: "DISPUTE_NOT_FOUND", message: "No dispute found with ID 'disp_999'." }
+                      }
+                    }
+                  }
+                }
+              },
               "422": {
-                description: "Evidence submission not allowed — dispute is closed or resolved",
+                description: "Unprocessable — dispute is already resolved or closed",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/ErrorResponse" },
                     examples: {
                       closedDispute: {
-                        summary: "Cannot submit evidence on resolved dispute",
-                        value: { code: "DISPUTE_CLOSED", message: "Evidence can no longer be submitted. Dispute disp_001 has already been resolved." }
+                        summary: "Dispute already resolved",
+                        value: { code: "DISPUTE_CLOSED", message: "Evidence can no longer be submitted. Dispute 'disp_001' has already been resolved." }
                       }
                     }
                   }
@@ -374,67 +371,7 @@ window.onload = function () {
         },
 
         // ─────────────────────────────────────────
-        // 5. DISPUTE MESSAGING
-        // ─────────────────────────────────────────
-
-        "/disputes/{disputeId}/messages": {
-          post: {
-            tags: ["Messaging"],
-            summary: "Send a message in a dispute thread",
-            description: "Allows the guest, host, or admin to post a message into the dispute thread. Used for clarifications, follow-up questions, and admin communications. The full message thread is returned as part of GET /disputes/{disputeId}.",
-            parameters: [
-              { name: "disputeId", in: "path", required: true, schema: { type: "string" }, example: "disp_001" }
-            ],
-            requestBody: {
-              required: true,
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/MessageSendRequest" },
-                  examples: {
-                    guestMessage: {
-                      summary: "POST /disputes/disp_001/messages — guest sends follow-up",
-                      value: { sentBy: "cust001", role: "guest", message: "I have submitted my screenshots. Please review as soon as possible." }
-                    },
-                    adminMessage: {
-                      summary: "POST /disputes/disp_001/messages — admin requests more info from host",
-                      value: { sentBy: "admin_007", role: "admin", message: "We have reviewed the guest's evidence. We are requesting the host provide documentation of the emergency cancellation or confirmation of their refund policy stance within 48 hours." }
-                    },
-                    hostMessage: {
-                      summary: "POST /disputes/disp_001/messages — host responds",
-                      value: { sentBy: "host123", role: "host", message: "I cancelled due to a family emergency and was not aware the automatic refund policy applied. I am happy to cooperate with whatever the admin decides." }
-                    }
-                  }
-                }
-              }
-            },
-            responses: {
-              "201": {
-                description: "Message sent",
-                content: {
-                  "application/json": {
-                    schema: { $ref: "#/components/schemas/Message" },
-                    examples: {
-                      sent: {
-                        summary: "Message posted to thread",
-                        value: {
-                          messageId: "msg_005",
-                          disputeId: "disp_001",
-                          sentBy: "cust001",
-                          role: "guest",
-                          message: "I have submitted my screenshots. Please review as soon as possible.",
-                          sentAt: "2026-03-05T09:35:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-
-        // ─────────────────────────────────────────
-        // 6. ASSIGN DISPUTE TO ADMIN
+        // ASSIGN DISPUTE TO ADMIN
         // ─────────────────────────────────────────
 
         "/disputes/{disputeId}/assign": {
@@ -452,11 +389,11 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/AssignRequest" },
                   examples: {
                     assign: {
-                      summary: "PUT /disputes/disp_001/assign — assign to admin and set priority",
+                      summary: "Assign to admin with high priority",
                       value: { adminId: "admin_007", priority: "high", note: "High-value booking involving full refund claim. Policy clearly favours guest — expedite." }
                     },
                     escalate: {
-                      summary: "PUT /disputes/disp_001/assign — escalate to senior admin",
+                      summary: "Escalate to senior admin",
                       value: { adminId: "admin_001", priority: "urgent", note: "Escalated due to unresolved harassment claim. Senior review required." }
                     }
                   }
@@ -465,7 +402,7 @@ window.onload = function () {
             },
             responses: {
               "200": {
-                description: "Dispute assigned",
+                description: "Dispute assigned successfully",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/Dispute" },
@@ -484,20 +421,52 @@ window.onload = function () {
                     }
                   }
                 }
+              },
+              "400": {
+                description: "Bad Request — admin ID missing or priority invalid",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      missingAdmin: {
+                        summary: "Admin ID not provided",
+                        value: { code: "MISSING_FIELD", message: "Field 'adminId' is required to assign a dispute." }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                description: "Not Found — dispute or admin does not exist",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      disputeNotFound: {
+                        summary: "Dispute not found",
+                        value: { code: "DISPUTE_NOT_FOUND", message: "No dispute found with ID 'disp_999'." }
+                      },
+                      adminNotFound: {
+                        summary: "Admin not found",
+                        value: { code: "ADMIN_NOT_FOUND", message: "No admin agent found with ID 'admin_999'." }
+                      }
+                    }
+                  }
+                }
               }
             }
           }
         },
 
         // ─────────────────────────────────────────
-        // 7. RESOLVE DISPUTE
+        // RESOLVE DISPUTE
         // ─────────────────────────────────────────
 
         "/disputes/{disputeId}/resolve": {
           post: {
             tags: ["Admin Actions"],
             summary: "Resolve a dispute with a ruling",
-            description: "Admin issues the final ruling on a dispute. The resolution specifies who the decision favours, the action taken (full refund, partial refund, no refund, penalty issued), the amount if applicable, and a written explanation. Triggers any associated payment actions automatically.",
+            description: "Admin issues the final ruling on a dispute. The resolution specifies who the decision favours, the action taken, the amount if applicable, and a written explanation. Triggers any associated payment actions automatically.",
             parameters: [
               { name: "disputeId", in: "path", required: true, schema: { type: "string" }, example: "disp_001" }
             ],
@@ -508,7 +477,7 @@ window.onload = function () {
                   schema: { $ref: "#/components/schemas/ResolveRequest" },
                   examples: {
                     fullRefundToGuest: {
-                      summary: "POST /disputes/disp_001/resolve — full refund ruled in guest's favour",
+                      summary: "Full refund ruled in guest's favour",
                       value: {
                         resolvedBy: "admin_007",
                         decisionFavours: "guest",
@@ -517,11 +486,11 @@ window.onload = function () {
                         currency: "USD",
                         penaltyIssuedTo: null,
                         penaltyAmount: null,
-                        explanation: "After reviewing the booking history, cancellation records, and platform policy, we confirm the host cancelled the booking 48 hours before check-in. Under our Host Cancellation Policy, the guest is entitled to a full refund of $520.00. The refund will be processed within 3-5 business days. The host's cancellation record has been noted."
+                        explanation: "Host cancelled 48 hours before check-in. Under our Host Cancellation Policy, the guest is entitled to a full refund of $520.00. The refund will be processed within 3-5 business days."
                       }
                     },
                     partialRefundCompromise: {
-                      summary: "POST /disputes/disp_002/resolve — partial refund compromise for damage dispute",
+                      summary: "Partial refund compromise for damage dispute",
                       value: {
                         resolvedBy: "admin_007",
                         decisionFavours: "both",
@@ -530,11 +499,11 @@ window.onload = function () {
                         currency: "USD",
                         penaltyIssuedTo: "cust004",
                         penaltyAmount: 190.00,
-                        explanation: "Evidence from both parties has been reviewed. Photos submitted by the host confirm damage occurred. However, the pre-existing condition of the carpet was noted in the previous guest's review, making full attribution to this guest unreasonable. A compromise of $190.00 has been determined — charged to the guest and remitted to the host."
+                        explanation: "Evidence confirms damage occurred but pre-existing carpet condition noted in prior reviews. A compromise of $190.00 has been determined — charged to the guest and remitted to the host."
                       }
                     },
-                    noActionHostFavoured: {
-                      summary: "POST /disputes/disp_003/resolve — host favoured, no refund",
+                    noRefundHostFavoured: {
+                      summary: "No refund — host favoured",
                       value: {
                         resolvedBy: "admin_001",
                         decisionFavours: "host",
@@ -543,7 +512,7 @@ window.onload = function () {
                         currency: "USD",
                         penaltyIssuedTo: null,
                         penaltyAmount: null,
-                        explanation: "The guest's claim that the listing was misrepresented has been reviewed against the listing photos, description, and booking communications. The listing accurately described the shared accommodation arrangement. The guest acknowledged the property type at the time of booking. The refund request has been declined."
+                        explanation: "The listing accurately described the shared accommodation arrangement. The guest acknowledged the property type at booking. The refund request has been declined."
                       }
                     }
                   }
@@ -552,13 +521,13 @@ window.onload = function () {
             },
             responses: {
               "200": {
-                description: "Dispute resolved",
+                description: "Dispute resolved with ruling issued",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/DisputeResolution" },
                     examples: {
                       resolved: {
-                        summary: "Dispute resolved — full refund to guest",
+                        summary: "Full refund issued to guest",
                         value: {
                           disputeId: "disp_001",
                           resolvedBy: "admin_007",
@@ -577,15 +546,29 @@ window.onload = function () {
                   }
                 }
               },
+              "409": {
+                description: "Conflict — dispute has already been resolved",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ErrorResponse" },
+                    examples: {
+                      alreadyResolved: {
+                        summary: "Cannot resolve twice",
+                        value: { code: "DISPUTE_ALREADY_RESOLVED", message: "Dispute 'disp_001' has already been resolved and cannot be modified." }
+                      }
+                    }
+                  }
+                }
+              },
               "422": {
-                description: "Cannot resolve — dispute not yet under review or missing evidence",
+                description: "Unprocessable — dispute not yet ready for resolution",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/ErrorResponse" },
                     examples: {
                       notReady: {
-                        summary: "Dispute not ready for resolution",
-                        value: { code: "DISPUTE_NOT_REVIEWABLE", message: "Dispute disp_001 is still awaiting evidence from the host. Resolution cannot be issued yet." }
+                        summary: "Evidence still pending from host",
+                        value: { code: "DISPUTE_NOT_REVIEWABLE", message: "Dispute 'disp_001' is still awaiting evidence from the host. Resolution cannot be issued yet." }
                       }
                     }
                   }
@@ -653,16 +636,6 @@ window.onload = function () {
             ]
           },
 
-          DisputeListResponse: {
-            type: "object",
-            properties: {
-              totalCount: { type: "integer", example: 3 },
-              page: { type: "integer", example: 1 },
-              limit: { type: "integer", example: 20 },
-              disputes: { type: "array", items: { $ref: "#/components/schemas/Dispute" } }
-            }
-          },
-
           Evidence: {
             type: "object",
             properties: {
@@ -697,15 +670,6 @@ window.onload = function () {
               role: { type: "string", enum: ["guest", "host", "admin"], example: "guest" },
               message: { type: "string", example: "I have submitted my screenshots. Please review as soon as possible." },
               sentAt: { type: "string", format: "date-time", example: "2026-03-05T09:35:00Z" }
-            }
-          },
-
-          MessageSendRequest: {
-            type: "object",
-            properties: {
-              sentBy: { type: "string", example: "cust001" },
-              role: { type: "string", enum: ["guest", "host", "admin"], example: "guest" },
-              message: { type: "string", example: "I have submitted my screenshots. Please review as soon as possible." }
             }
           },
 
